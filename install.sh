@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Set up variables
-REPO_URL="https://github.com/mkrasselt1/raspberry-obd2-to-homeasstant.git"
-INSTALL_DIR="/opt/raspberry-obd2-to-homeasstant"
+REPO_URL="https://github.com/mkrasselt1/raspberry-obd2-to-homeassistant.git"
+INSTALL_DIR="/opt/raspberry-obd2-to-homeassistant"
 SERVICE_NAME="obd2_to_homeassistant"
 PYTHON_SCRIPT="main.py"  # Replace with the actual Python script name in the repo
 VENV_DIR="$INSTALL_DIR/venv"
