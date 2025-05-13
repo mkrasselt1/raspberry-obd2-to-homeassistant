@@ -1,6 +1,8 @@
 import obd
 import paho.mqtt.client as mqtt
 import json
+import csv
+import os
 import time
 
 # Load configuration from external file
@@ -24,9 +26,7 @@ OBD_MODE = config["obd"]["mode"]  # "uart" or "tcp"
 OBD_PORT = config["obd"].get("port", "/dev/ttyUSB0")  # Default for UART
 OBD_BAUDRATE = config["obd"].get("baudrate", 9600)  # Default for UART
 OBD_TCP_URL = config["obd"].get("tcp_url")  # For TCP mode
-
-# Torque Pro PID List (Example PIDs)
-PID_LIST = config["pids"]
+PIDS_FOLDER = "pids"  # Folder where PID CSV files are stored
 
 # MQTT Client Setup
 mqtt_client = mqtt.Client()
@@ -40,6 +40,37 @@ def on_connect(client, userdata, flags, rc):
 mqtt_client.on_connect = on_connect
 mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
 mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
+
+def load_pids_from_folder(folder_path):
+    """Load PID definitions from all CSV files in a folder."""
+    pid_list = {}
+    try:
+        for file_name in os.listdir(folder_path):
+            if file_name.endswith(".csv"):
+                file_path = os.path.join(folder_path, file_name)
+                print(f"Loading PIDs from {file_path}...")
+                with open(file_path, mode="r") as csv_file:
+                    csv_reader = csv.DictReader(csv_file)
+                    for row in csv_reader:
+                        mode = row["Mode"]
+                        pid = row["PID"]
+                        name = row["Name"]
+                        unit = row["Unit"]
+                        mqtt_id = row["MQTT_ID"]
+                        
+                        if mode not in pid_list:
+                            pid_list[mode] = {}
+                        pid_list[mode][pid] = {
+                            "name": name,
+                            "unit": unit,
+                            "mqtt_id": mqtt_id
+                        }
+    except Exception as e:
+        print(f"Failed to load PIDs: {e}")
+        exit(1)
+    return pid_list
+
+PID_LIST = load_pids_from_folder(PIDS_FOLDER)
 
 def send_autodiscovery():
     """Send MQTT autodiscovery config for Home Assistant."""
