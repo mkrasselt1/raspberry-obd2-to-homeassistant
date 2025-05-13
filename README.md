@@ -28,8 +28,8 @@ A project designed to integrate car data from an OBD2 dongle with [Home Assistan
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/mkrasselt1/raspberry-ob2-to-homeasstant.git
-cd raspberry-ob2-to-homeasstant
+git clone https://github.com/mkrasselt1/raspberry-obd2-to-homeasstant.git
+cd raspberry-obd2-to-homeasstant
 ```
 
 ### Step 2: Run the Installer Script
@@ -44,7 +44,7 @@ sudo ./install.sh
 
 The script will:
 
-    1. Clone the repository into /opt/raspberry-ob2-to-homeasstant.
+    1. Clone the repository into /opt/raspberry-obd2-to-homeasstant.
     2. Set up a Python virtual environment and install required dependencies.
     3. Create and enable a systemd service to run the script.
 
@@ -94,8 +94,8 @@ Starting the Service
 The service will start automatically after installation. You can manually start or stop it using:
 
 ```bash
-sudo systemctl start ob2_to_homeassistant
-sudo systemctl stop ob2_to_homeassistant
+sudo systemctl start obv2_to_homeassistant
+sudo systemctl stop obd2_to_homeassistant
 ```
 
 ### Checking Service Logs
@@ -103,7 +103,7 @@ sudo systemctl stop ob2_to_homeassistant
 View logs to debug or monitor the service:
 
 ```bash
-sudo journalctl -u ob2_to_homeassistant
+sudo journalctl -u obd2_to_homeassistant
 ```
 
 ##Testing the Script
@@ -141,7 +141,7 @@ This project is licensed under the MIT License. See the LICENSE file for details
     Run the following to reinstall dependencies:
     bash
 
-    source /opt/raspberry-ob2-to-homeasstant/venv/bin/activate
+    source /opt/raspberry-obd2-to-homeasstant/venv/bin/activate
     pip install -r requirements.txt
 
 ## Acknowledgments
