@@ -3,32 +3,30 @@ import paho.mqtt.client as mqtt
 import json
 import time
 
+# Load configuration from external file
+CONFIG_FILE = "config.json"
+try:
+    with open(CONFIG_FILE, "r") as file:
+        config = json.load(file)
+except FileNotFoundError:
+    print(f"Configuration file '{CONFIG_FILE}' not found. Exiting...")
+    exit(1)
+
 # MQTT Configuration
-MQTT_BROKER = "mqtt_broker_address"  # Replace with your MQTT broker address
-MQTT_PORT = 1883
-MQTT_USER = "mqtt_user"  # Replace with your MQTT username
-MQTT_PASSWORD = "mqtt_password"  # Replace with your MQTT password
-MQTT_TOPIC_PREFIX = "homeassistant/sensor/obd2"  # Prefix for Home Assistant MQTT autodiscovery
+MQTT_BROKER = config["mqtt"]["broker"]
+MQTT_PORT = config["mqtt"]["port"]
+MQTT_USER = config["mqtt"]["user"]
+MQTT_PASSWORD = config["mqtt"]["password"]
+MQTT_TOPIC_PREFIX = config["mqtt"]["topic_prefix"]
 
 # OBD Configuration
-OBD_PORT = "/dev/ttyUSB0"  # Replace with your OBD2 dongle's port
-OBD_BAUDRATE = 9600
+OBD_MODE = config["obd"]["mode"]  # "uart" or "tcp"
+OBD_PORT = config["obd"].get("port", "/dev/ttyUSB0")  # Default for UART
+OBD_BAUDRATE = config["obd"].get("baudrate", 9600)  # Default for UART
+OBD_TCP_URL = config["obd"].get("tcp_url")  # For TCP mode
 
 # Torque Pro PID List (Example PIDs)
-PID_LIST = {
-    "01": {  # Mode 01
-        "0C": {  # RPM
-            "name": "Engine RPM",
-            "unit": "rpm",
-            "mqtt_id": "engine_rpm"
-        },
-        "0D": {  # Speed
-            "name": "Vehicle Speed",
-            "unit": "km/h",
-            "mqtt_id": "vehicle_speed"
-        }
-    }
-}
+PID_LIST = config["pids"]
 
 # MQTT Client Setup
 mqtt_client = mqtt.Client()
@@ -80,9 +78,17 @@ def read_obd_data(connection):
 def main():
     # Connect to OBD2
     print("Connecting to OBD2 dongle...")
-    connection = obd.OBD(portstr=OBD_PORT)
     
-    if not connection.is_connected():
+    connection = None
+    if OBD_MODE == "uart":
+        connection = obd.OBD(portstr=OBD_PORT, baudrate=OBD_BAUDRATE)
+    elif OBD_MODE == "tcp":
+        connection = obd.OBD(OBD_TCP_URL)
+    else:
+        print(f"Invalid OBD mode: {OBD_MODE}. Exiting...")
+        return
+    
+    if not connection or not connection.is_connected():
         print("Failed to connect to OBD2 dongle. Exiting...")
         return
 
