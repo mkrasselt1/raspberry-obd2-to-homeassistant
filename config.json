@@ -11,19 +11,5 @@
         "port": "/dev/ttyUSB0",
         "baudrate": 9600,
         "tcp_url": "YOUR_OBD_TCP_HOST:PORT"
-    },
-    "pids": {
-        "01": {
-            "0C": {
-                "name": "Engine RPM",
-                "unit": "rpm",
-                "mqtt_id": "engine_rpm"
-            },
-            "0D": {
-                "name": "Vehicle Speed",
-                "unit": "km/h",
-                "mqtt_id": "vehicle_speed"
-            }
-        }
     }
 }
