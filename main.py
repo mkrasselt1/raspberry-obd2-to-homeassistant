@@ -1,9 +1,10 @@
 from mqtt_handler import MqttHandler
 from obd_reader import ObdReader
 import time
+from pid_loader import load_pids_from_folder
+from config import load_config
 
 def main():
-    # Load configuration (assuming a load_config function exists)
     config = load_config("config.json")
 
     # Initialize MQTT Handler
