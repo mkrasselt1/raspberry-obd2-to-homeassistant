@@ -10,20 +10,30 @@ def load_pids_from_folder(folder_path):
                 file_path = os.path.join(folder_path, file_name)
                 print(f"Loading PIDs from {file_path}...")
                 with open(file_path, mode="r") as csv_file:
-                    csv_reader = csv.DictReader(csv_file)
+                    # CSV files without headers; define the column order manually
+                    csv_reader = csv.reader(csv_file)
                     for row in csv_reader:
-                        mode = row["Mode"]
-                        pid = row["PID"]
-                        name = row["Name"]
-                        unit = row["Unit"]
-                        mqtt_id = row["MQTT_ID"]
+                        # Assign values from columns
+                        pid_id = row[0]       # Column 0: id
+                        name = row[1]         # Column 1: name
+                        pid = row[2]          # Column 2: pid
+                        equation = row[3]     # Column 3: equation
+                        min_value = row[4]    # Column 4: min
+                        max_value = row[5]    # Column 5: max
+                        unit = row[6]         # Column 6: unit
+                        filter_value = row[7] # Column 7: filter
 
-                        if mode not in pid_list:
-                            pid_list[mode] = {}
-                        pid_list[mode][pid] = {
+                        # Add the PID to the dictionary
+                        if pid_id not in pid_list:
+                            pid_list[pid_id] = {}
+
+                        pid_list[pid_id][pid] = {
                             "name": name,
+                            "equation": equation,
+                            "min": min_value,
+                            "max": max_value,
                             "unit": unit,
-                            "mqtt_id": mqtt_id
+                            "filter": filter_value,
                         }
     except Exception as e:
         print(f"Failed to load PIDs: {e}")
