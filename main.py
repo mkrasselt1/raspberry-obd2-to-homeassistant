@@ -1,6 +1,6 @@
 from config import load_config
 from pid_loader import load_pids_from_folder
-from mqtt_handler.py import MqttHandler
+from mqtt_handler import MqttHandler
 from obd_reader import ObdReader
 
 def send_autodiscovery(mqtt_handler, pid_list):
