@@ -1,32 +1,12 @@
-from config import load_config
-from pid_loader import load_pids_from_folder
 from mqtt_handler import MqttHandler
 from obd_reader import ObdReader
-
-def send_autodiscovery(mqtt_handler, pid_list):
-    """Send MQTT autodiscovery config for Home Assistant."""
-    for mode, pids in pid_list.items():
-        for pid, details in pids.items():
-            config_topic = f"{mqtt_handler.topic_prefix}/{details['mqtt_id']}/config"
-            config_payload = {
-                "name": details["name"],
-                "state_topic": f"{mqtt_handler.topic_prefix}/{details['mqtt_id']}/state",
-                "unit_of_measurement": details["unit"],
-                "unique_id": f"obd2_{details['mqtt_id']}",
-                "device": {
-                    "identifiers": ["obd2_device"],
-                    "name": "OBD2 Dongle",
-                    "manufacturer": "Generic",
-                    "model": "OBD2 Bluetooth Dongle"
-                }
-            }
-            mqtt_handler.publish(config_topic, config_payload, retain=True)
+import time
 
 def main():
-    # Load configuration
-    config = load_config()
+    # Load configuration (assuming a load_config function exists)
+    config = load_config("config.json")
 
-    # Initialize MQTT handler
+    # Initialize MQTT Handler
     mqtt_handler = MqttHandler(
         broker=config["mqtt"]["broker"],
         port=config["mqtt"]["port"],
@@ -35,9 +15,6 @@ def main():
         topic_prefix=config["mqtt"]["topic_prefix"]
     )
     mqtt_handler.start_loop()
-
-    # Load PIDs
-    pid_list = load_pids_from_folder("pids")
 
     # Initialize OBD Reader
     obd_reader = ObdReader(
@@ -48,11 +25,32 @@ def main():
     )
     obd_reader.connect()
 
-    # Send MQTT Autodiscovery
-    send_autodiscovery(mqtt_handler, pid_list)
+    # Load PIDs from folder
+    pids = load_pids_from_folder("pids")
 
-    # Start reading and publishing data
-    obd_reader.start_reading(pid_list, mqtt_handler)
+    # Initialize PIDs in Home Assistant
+    for mode, pid_group in pids.items():
+        for pid, details in pid_group.items():
+            mqtt_handler.initialize_pid(
+                pid=pid,
+                name=details["name"],
+                unit=details["unit"],
+                mqtt_id=details["mqtt_id"]
+            )
+
+    # Continuously read and update PID values
+    try:
+        while True:
+            for mode, pid_group in pids.items():
+                for pid, details in pid_group.items():
+                    value = obd_reader.read_pid(mode, pid)
+                    if value is not None:
+                        mqtt_handler.update_pid_value(details["mqtt_id"], value)
+            time.sleep(1)  # Adjust the polling interval as needed
+    except KeyboardInterrupt:
+        print("Shutting down...")
+    finally:
+        mqtt_handler.stop_loop()
 
 if __name__ == "__main__":
     main()
