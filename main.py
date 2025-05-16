@@ -40,10 +40,8 @@ def main():
     pids = load_pids_from_folder("pids")
     
     # Initialize PIDs in Home Assistant
-    for mode, pid_group in pids.items():
-        print(mode, pid_group) # Debugging-Ausgabe
-        for pid, details in pid_group.items():
-            print(pid, details) # Debugging-Ausgabe
+    for pid, parameters in pids.items():
+        for pid_id, details in parameters.items():
             # Initialisiere PID in Home Assistant
             mqtt_handler.initialize_pid(
                 pid=pid,

@@ -25,9 +25,9 @@ def load_pids_from_folder(folder_path):
 
                         # Add the PID to the dictionary
                         if pid_id not in pid_list:
-                            pid_list[pid_id] = {}
+                            pid_list[pid] = {}
 
-                        pid_list[pid_id][pid] = {
+                        pid_list[pid][pid_id] = {
                             "name": name,
                             "equation": equation,
                             "min": min_value,

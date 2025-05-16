@@ -40,8 +40,8 @@ class ObdReader:
             return None
 
     def read_data(self, pid_list, mqtt_handler):
-        for mode, pids in pid_list.items():
-            for pid, details in pids.items():
+        for pid, parameters in pid_list.items():
+            for pid_id, details in parameters.items():
                 try:
                     cmd = obd.commands[pid]
                     response = self.connection.query(cmd, force=True)
