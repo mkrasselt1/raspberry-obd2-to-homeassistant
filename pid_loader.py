@@ -34,6 +34,7 @@ def load_pids_from_folder(folder_path):
                             "max": max_value,
                             "unit": unit,
                             "filter": filter_value,
+                            "pid_id": pid_id
                         }
     except Exception as e:
         print(f"Failed to load PIDs: {e}")
