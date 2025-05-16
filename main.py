@@ -29,7 +29,6 @@ def main():
 
     # Initialize OBD Reader
     obd_reader = ObdReader(
-        mode=config["obd"]["mode"],
         port=config["obd"].get("port"),
         baudrate=config["obd"].get("baudrate"),
         tcp_url=config["obd"].get("tcp_url")
