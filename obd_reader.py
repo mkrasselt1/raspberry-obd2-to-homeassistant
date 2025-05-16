@@ -52,9 +52,9 @@ class ObdReader:
                         custom_cmd = obd.OBDCommand(
                             name=pid,
                             command=command_str,
-                            _bytes=num_bytes,
+                            bytes=num_bytes,
                             decoder=None,
-                            desc="Custom PID"
+                            description="Custom PID"
                         )
                         response = self.connection.query(custom_cmd, force=True)
                     if response.is_successful():
