@@ -42,22 +42,22 @@ class ObdReader:
         for pid, parameters in pid_list.items():
             for pid_id, details in parameters.items():
                 try:
-                    # Prüfe, ob PID im Standard vorhanden ist
                     if pid in obd.commands:
                         cmd = obd.commands[pid]
                         response = self.connection.query(cmd, force=True)
                     else:
-                        # Sende eigenen OBD-Befehl (als hex-String)
-                        response = self.connection.query(obd.OBDCommand(
+                        # PID-String in OBD-Kommando umwandeln (z.B. "2105" -> "21 05")
+                        command_str = " ".join([pid[i:i+2] for i in range(0, len(pid), 2)])
+                        num_bytes = details.get("bytes", 2)  # Optional: aus details holen
+                        custom_cmd = obd.OBDCommand(
                             name=pid,
-                            command=pid,
-                            _bytes=1,
+                            command=command_str,
+                            _bytes=num_bytes,
                             decoder=None,
                             desc="Custom PID"
-                        ), force=True)
+                        )
+                        response = self.connection.query(custom_cmd, force=True)
                     if response.is_successful():
-                        # Rohdaten extrahieren
-                        # Je nach Adapter kann die Struktur variieren!
                         if hasattr(response, "messages") and response.messages:
                             raw_bytes = response.messages[0].data[2:]
                             data_bytes = [b for b in raw_bytes]
