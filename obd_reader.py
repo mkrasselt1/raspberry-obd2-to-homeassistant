@@ -14,7 +14,7 @@ class ObdReader:
         if self.mode == "uart":
             self.connection = obd.OBD(portstr=self.port, baudrate=self.baudrate)
         elif self.mode == "tcp":
-            self.connection = obd.OBD(self.tcp_url)
+            self.connection = obd.OBD("/dev/ttyOBD2", baudrate=self.baudrate)
         else:
             print(f"Invalid OBD mode: {self.mode}. Exiting...")
             exit(1)
