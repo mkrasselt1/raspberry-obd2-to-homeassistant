@@ -41,7 +41,7 @@ def main():
     
     # Initialize PIDs in Home Assistant
     for mode, pid_group in pids.items():
-        print(pid, details) # Debugging-Ausgabe
+        print(mode, pid_group) # Debugging-Ausgabe
         for pid, details in pid_group.items():
             print(pid, details) # Debugging-Ausgabe
             # Initialisiere PID in Home Assistant
