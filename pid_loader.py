@@ -25,6 +25,12 @@ def load_pids_from_folder(folder_path):
                         mode = pid_mode[:2]
                         pid = pid_mode[2:]
 
+                        # Prüfe auf Binary-Modus
+                        binary_mode = False
+                        if mode.endswith("b"):
+                            mode = mode[:-1]
+                            binary_mode = True
+
                         key = (mode, pid)
                         if key not in pid_list:
                             pid_list[key] = {}
@@ -37,7 +43,8 @@ def load_pids_from_folder(folder_path):
                             "max": max_value,
                             "unit": unit,
                             "pid_id": pid_id,
-                            "header": header
+                            "header": header,
+                            "binary_mode": binary_mode
                         }
     except Exception as e:
         print(f"Failed to load PIDs: {e}")
