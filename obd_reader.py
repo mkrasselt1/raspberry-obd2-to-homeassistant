@@ -48,16 +48,10 @@ class ObdReader:
                     else:
                         # PID-String in OBD-Kommando umwandeln (z.B. "2105" -> "21 05")
                         command_str = " ".join([pid[i:i+2] for i in range(0, len(pid), 2)])
-                        num_bytes = details.get("bytes", 2)  # Optional: aus details holen
-                        custom_cmd = obd.OBDCommand(
-                            name=pid,
-                            command=command_str,
-                            bytes=num_bytes,
-                            decoder=None,
-                            description="Custom PID"
-                        )
-                        response = self.connection.query(custom_cmd, force=True)
+                        # Sende den Befehl als String direkt an den Adapter
+                        response = self.connection.query(command_str)
                     if response.is_successful():
+                        # Rohdaten extrahieren (je nach Adapter kann das variieren)
                         if hasattr(response, "messages") and response.messages:
                             raw_bytes = response.messages[0].data[2:]
                             data_bytes = [b for b in raw_bytes]
