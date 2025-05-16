@@ -2,10 +2,10 @@ import json
 
 CONFIG_FILE = "config.json"
 
-def load_config():
+def load_config(filename=CONFIG_FILE):
     try:
-        with open(CONFIG_FILE, "r") as file:
+        with open(filename, "r") as file:
             return json.load(file)
     except FileNotFoundError:
-        print(f"Configuration file '{CONFIG_FILE}' not found. Exiting...")
+        print(f"Configuration file '{filename}' not found. Exiting...")
         exit(1)
