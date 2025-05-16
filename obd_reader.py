@@ -39,17 +39,18 @@ class ObdReader:
             return None
 
     def read_data(self, pid_list, mqtt_handler):
-        for pid, parameters in pid_list.items():
+        for (mode, pid), parameters in pid_list.items():
             for pid_id, details in parameters.items():
                 try:
-                    if pid in obd.commands:
+                    # Standard-PIDs (meist Mode 01)
+                    if pid in obd.commands and mode == "01":
                         cmd = obd.commands[pid]
                         response = self.connection.query(cmd, force=True)
                         success = response.is_successful()
                     else:
-                        command_str = " ".join([pid[i:i+2] for i in range(0, len(pid), 2)])
+                        # Custom PID: baue Befehl aus Mode und PID
+                        command_str = f"{mode} " + " ".join([pid[i:i+2] for i in range(0, len(pid), 2)])
                         response = self.connection.query(command_str)
-                        # Bei älteren python-OBD-Versionen:
                         success = hasattr(response, "messages") and response.messages
 
                     if success:
