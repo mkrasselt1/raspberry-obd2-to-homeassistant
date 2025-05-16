@@ -51,9 +51,9 @@ class ObdReader:
                         response = self.connection.query(obd.OBDCommand(
                             name=pid,
                             command=pid,
-                            bytes=1,
+                            _bytes=1,
                             decoder=None,
-                            description="Custom PID"
+                            desc="Custom PID"
                         ), force=True)
                     if response.is_successful():
                         # Rohdaten extrahieren
