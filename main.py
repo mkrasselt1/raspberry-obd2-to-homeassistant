@@ -31,7 +31,6 @@ def main():
     obd_reader = ObdReader(
         port=config["obd"].get("port"),
         baudrate=config["obd"].get("baudrate"),
-        tcp_url=config["obd"].get("tcp_url")
     )
     obd_reader.connect()
 
