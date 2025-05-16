@@ -28,7 +28,6 @@ class ObdReader:
             self.connection.close()
 
     def parse_formula(self, equation, data_bytes):
-        # Erzeuge Variablen A, B, C, D, ... aus den Bytes
         context = {}
         for idx, byte in enumerate(data_bytes):
             var = chr(ord('A') + idx)
@@ -43,18 +42,31 @@ class ObdReader:
         for pid, parameters in pid_list.items():
             for pid_id, details in parameters.items():
                 try:
-                    cmd = obd.commands[pid]
-                    response = self.connection.query(cmd, force=True)
+                    # Prüfe, ob PID im Standard vorhanden ist
+                    if pid in obd.commands:
+                        cmd = obd.commands[pid]
+                        response = self.connection.query(cmd, force=True)
+                    else:
+                        # Sende eigenen OBD-Befehl (als hex-String)
+                        response = self.connection.query(obd.OBDCommand(
+                            name=pid,
+                            command=pid,
+                            bytes=1,
+                            decoder=None,
+                            description="Custom PID"
+                        ), force=True)
                     if response.is_successful():
                         # Rohdaten extrahieren
-                        raw_bytes = response.messages[0].data[2:]  # Die ersten 2 Bytes sind Header
-                        # Bytes als Integer-Liste
-                        data_bytes = [b for b in raw_bytes]
+                        # Je nach Adapter kann die Struktur variieren!
+                        if hasattr(response, "messages") and response.messages:
+                            raw_bytes = response.messages[0].data[2:]
+                            data_bytes = [b for b in raw_bytes]
+                        else:
+                            data_bytes = []
                         value = None
-                        if "equation" in details:
+                        if "equation" in details and data_bytes:
                             value = self.parse_formula(details["equation"], data_bytes)
                         else:
-                            # Fallback: Standardwert
                             value = response.value.magnitude if response.value else None
                         topic = f"{mqtt_handler.topic_prefix}/{details['pid_id']}/state"
                         mqtt_handler.publish(topic, value)
