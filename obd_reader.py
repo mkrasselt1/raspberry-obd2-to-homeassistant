@@ -45,13 +45,14 @@ class ObdReader:
                     if pid in obd.commands:
                         cmd = obd.commands[pid]
                         response = self.connection.query(cmd, force=True)
+                        success = response.is_successful()
                     else:
-                        # PID-String in OBD-Kommando umwandeln (z.B. "2105" -> "21 05")
                         command_str = " ".join([pid[i:i+2] for i in range(0, len(pid), 2)])
-                        # Sende den Befehl als String direkt an den Adapter
                         response = self.connection.query(command_str)
-                    if response.is_successful():
-                        # Rohdaten extrahieren (je nach Adapter kann das variieren)
+                        # Bei älteren python-OBD-Versionen:
+                        success = hasattr(response, "messages") and response.messages
+
+                    if success:
                         if hasattr(response, "messages") and response.messages:
                             raw_bytes = response.messages[0].data[2:]
                             data_bytes = [b for b in raw_bytes]
@@ -61,7 +62,7 @@ class ObdReader:
                         if "equation" in details and data_bytes:
                             value = self.parse_formula(details["equation"], data_bytes)
                         else:
-                            value = response.value.magnitude if response.value else None
+                            value = response.value.magnitude if hasattr(response, "value") and response.value else None
                         topic = f"{mqtt_handler.topic_prefix}/{details['pid_id']}/state"
                         mqtt_handler.publish(topic, value)
                         print(f"Published {details['name']}: {value} {details['unit']} to {topic}")
