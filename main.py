@@ -38,12 +38,13 @@ def main():
 
     # Load PIDs from folder
     pids = load_pids_from_folder("pids")
-    print("Loaded PIDs:")
-    print(pids)
-
+    
     # Initialize PIDs in Home Assistant
     for mode, pid_group in pids.items():
+        print(pid, details) # Debugging-Ausgabe
         for pid, details in pid_group.items():
+            print(pid, details) # Debugging-Ausgabe
+            # Initialisiere PID in Home Assistant
             mqtt_handler.initialize_pid(
                 pid=pid,
                 name=details["name"],
