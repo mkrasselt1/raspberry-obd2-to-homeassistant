@@ -35,7 +35,7 @@ class ObdReader:
                     response = self.connection.query(cmd)
                     if response.is_successful():
                         value = response.value.magnitude
-                        topic = f"{mqtt_handler.topic_prefix}/{details['mqtt_id']}/state"
+                        topic = f"{mqtt_handler.topic_prefix}/{details['pid_id']}/state"
                         mqtt_handler.publish(topic, value)
                         print(f"Published {details['name']}: {value} {details['unit']} to {topic}")
                 except Exception as e:

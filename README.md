@@ -70,23 +70,9 @@ OBD_PORT = "/dev/ttyUSB0"  # Replace with your OBD2 dongle's port
 
 Torque Pro PID List
 
-Modify the PID list in main.py to match the PIDs you want to monitor. Example:
-Python
+Put the into the pid folder that you want to monitor. Example:
 
-PID_LIST = {
-    "01": {  # Mode 01
-        "0C": {  # RPM
-            "name": "Engine RPM",
-            "unit": "rpm",
-            "mqtt_id": "engine_rpm"
-        },
-        "0D": {  # Speed
-            "name": "Vehicle Speed",
-            "unit": "km/h",
-            "mqtt_id": "vehicle_speed"
-        }
-    }
-}
+https://raw.githubusercontent.com/JejuSoul/OBD-PIDs-for-HKMC-EVs/refs/heads/master/Ioniq%20EV%20-%2028kWh/extendedpids/Hyundai_Ioniq_EV_BMS_data.csv
 
 ##Usage
 Starting the Service

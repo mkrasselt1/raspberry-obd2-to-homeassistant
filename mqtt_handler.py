@@ -25,22 +25,22 @@ class MqttHandler:
     def stop_loop(self):
         self.client.loop_stop()
 
-    def initialize_pid(self, pid, name, unit, mqtt_id):
+    def initialize_pid(self, pid, name, unit, pid_id):
         """
         Publish Home Assistant MQTT discovery message for a new PID.
         """
-        if mqtt_id in self.initialized_pids:
+        if pid_id in self.initialized_pids:
             return  # Avoid reinitializing the same PID
 
-        discovery_topic = f"homeassistant/sensor/{mqtt_id}/config"
-        state_topic = f"{self.topic_prefix}/{mqtt_id}/state"
+        discovery_topic = f"homeassistant/sensor/{pid_id}/config"
+        state_topic = f"{self.topic_prefix}/{pid_id}/state"
         payload = {
             "name": name,
             "state_topic": state_topic,
             "unit_of_measurement": unit,
             "device_class": None,  # Optional: Define Home Assistant device class if applicable
             "state_class": "measurement",  # Define state class (e.g., measurement)
-            "unique_id": f"obd2_{mqtt_id}",
+            "unique_id": f"obd2_{pid_id}",
             "device": {
                 "identifiers": ["obd2_device"],
                 "name": "OBD2 Dongle",
@@ -50,13 +50,13 @@ class MqttHandler:
         }
         # Publish discovery message
         self.publish(discovery_topic, payload, retain=True)
-        print(f"Initialized PID {name} with MQTT ID {mqtt_id} in Home Assistant")
-        self.initialized_pids.add(mqtt_id)
+        print(f"Initialized PID {name} with MQTT ID {pid_id} in Home Assistant")
+        self.initialized_pids.add(pid_id)
 
-    def update_pid_value(self, mqtt_id, value):
+    def update_pid_value(self, pid_id, value):
         """
         Update the value of a PID in Home Assistant.
         """
-        state_topic = f"{self.topic_prefix}/{mqtt_id}/state"
+        state_topic = f"{self.topic_prefix}/{pid_id}/state"
         self.publish(state_topic, value)
-        print(f"Updated PID with MQTT ID {mqtt_id} to value {value}")
+        print(f"Updated PID with MQTT ID {pid_id} to value {value}")
