@@ -38,6 +38,8 @@ def main():
 
     # Load PIDs from folder
     pids = load_pids_from_folder("pids")
+    print("Loaded PIDs:")
+    print(pids)
 
     # Initialize PIDs in Home Assistant
     for mode, pid_group in pids.items():
