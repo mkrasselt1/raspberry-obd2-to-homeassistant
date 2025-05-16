@@ -27,14 +27,35 @@ class ObdReader:
         if self.connection:
             self.connection.close()
 
+    def parse_formula(self, equation, data_bytes):
+        # Erzeuge Variablen A, B, C, D, ... aus den Bytes
+        context = {}
+        for idx, byte in enumerate(data_bytes):
+            var = chr(ord('A') + idx)
+            context[var] = byte
+        try:
+            return eval(equation, {}, context)
+        except Exception as e:
+            print(f"Error evaluating equation '{equation}' with bytes {data_bytes}: {e}")
+            return None
+
     def read_data(self, pid_list, mqtt_handler):
         for mode, pids in pid_list.items():
             for pid, details in pids.items():
                 try:
-                    cmd = obd.commands[pid]  # Get OBD command by PID
-                    response = self.connection.query(cmd)
+                    cmd = obd.commands[pid]
+                    response = self.connection.query(cmd, force=True)
                     if response.is_successful():
-                        value = response.value.magnitude
+                        # Rohdaten extrahieren
+                        raw_bytes = response.messages[0].data[2:]  # Die ersten 2 Bytes sind Header
+                        # Bytes als Integer-Liste
+                        data_bytes = [b for b in raw_bytes]
+                        value = None
+                        if "equation" in details:
+                            value = self.parse_formula(details["equation"], data_bytes)
+                        else:
+                            # Fallback: Standardwert
+                            value = response.value.magnitude if response.value else None
                         topic = f"{mqtt_handler.topic_prefix}/{details['pid_id']}/state"
                         mqtt_handler.publish(topic, value)
                         print(f"Published {details['name']}: {value} {details['unit']} to {topic}")

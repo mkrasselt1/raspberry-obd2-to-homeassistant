@@ -7,7 +7,7 @@ from config import load_config
 def main():
     config = load_config("config.json")
     socat_manager = None
-    
+
     # Starte socat nur bei TCP-Modus
     if config["obd"]["mode"] == "tcp":
         from socat_manager import SocatManager
@@ -49,15 +49,11 @@ def main():
                 pid_id=details["pid_id"]
             )
 
-    # Continuously read and update PID values
+    # Kontinuierlich PIDs lesen und veröffentlichen
     try:
         while True:
-            for mode, pid_group in pids.items():
-                for pid, details in pid_group.items():
-                    value = obd_reader.read_pid(mode, pid)
-                    if value is not None:
-                        mqtt_handler.update_pid_value(details["pid_id"], value)
-            time.sleep(1)  # Adjust the polling interval as needed
+            obd_reader.read_data(pids, mqtt_handler)
+            time.sleep(1)  # Polling-Intervall
     except KeyboardInterrupt:
         print("Shutting down...")
     finally:
