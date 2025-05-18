@@ -55,6 +55,8 @@ class ObdReader:
         for idx, byte in enumerate(data_bytes):
             var = chr(ord('A') + idx)
             context[var] = byte
+            var_lower = chr(ord('a') + idx)
+            context[var_lower] = byte
         try:
             return eval(equation, {}, context)
         except Exception as e:
