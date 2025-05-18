@@ -60,7 +60,7 @@ class Elm327:
         print(f"[DEBUG] Response from dongle: {ret}")
         return ret.strip(b'\r\n')
 
-    def send_at_cmd(self, cmd, expect='OK'):
+    def send_at_cmd(self, cmd, expect):
         """ Send AT command to dongle and return response. """
         print(f"[DEBUG] Sending AT command: {cmd}")
         ret = self.talk_to_dongle(cmd, expect)
