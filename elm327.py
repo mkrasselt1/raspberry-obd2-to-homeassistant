@@ -37,7 +37,7 @@ class Elm327:
 
                 self._serial.write(bytes(cmd + '\r\n', 'ascii'))
                 ret = bytearray()
-                while True:
+                while expect is not None:
                     if not self._serial.in_waiting:
                         sleep(0.1)
                         continue
