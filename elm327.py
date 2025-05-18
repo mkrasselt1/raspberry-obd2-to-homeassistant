@@ -60,7 +60,7 @@ class Elm327:
             print("[ERROR] Serial timeout occurred while communicating with dongle.")
             ret = b'TIMEOUT'
 
-        print(f"[DEBUG] Response from dongle: {ret.strip(b'\r\n')}")
+        print(f"[DEBUG] Response from dongle: {ret}")
         return ret.strip(b'\r\n')
 
     def send_at_cmd(self, cmd, expect='OK'):
