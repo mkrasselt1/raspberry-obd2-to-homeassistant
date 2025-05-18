@@ -14,15 +14,18 @@ class ObdReader:
         self.ser = serial.Serial(self.port, self.baudrate, timeout=1)
         time.sleep(1)
         # --- ELM327 Initialisierung ---
+        self.send_serial_cmd("AT D")      # Set all settings to default
         self.send_serial_cmd("AT Z")      # Reset ELM327
         self.send_serial_cmd("AT E0")     # Echo off (Antworten enthalten nicht den gesendeten Befehl)
         self.send_serial_cmd("AT L0")     # Linefeeds off (keine Zeilenumbrüche in Antworten)
         self.send_serial_cmd("AT S0")     # Spaces off (keine Leerzeichen in Antworten)
         self.send_serial_cmd("AT H0")     # Headers off (nur Daten, keine CAN-IDs in Antwort)
+        #self.send_serial_cmd("AT H1")     # Headers on (include CAN IDs in responses)
         self.send_serial_cmd("AT D0")     # Display of DLC off (keine Anzeige der Datenlänge)
         self.send_serial_cmd("AT CAF1")   # Automatic formatting on (Antworten werden automatisch formatiert)
-        self.send_serial_cmd("AT SP 6")   # Setze Protokoll auf ISO 15765-4 CAN (meist für neuere Fahrzeuge)
-        self.send_serial_cmd("AT ST 96")  # Setze Timeout auf 150ms (Standardwert)
+        self.send_serial_cmd("AT SP 0")   # Set protocol to automatic
+        #self.send_serial_cmd("AT SP 6")   # Setze Protokoll auf ISO 15765-4 CAN (meist für neuere Fahrzeuge)
+        self.send_serial_cmd("AT ST 96")  # Set timeout to 150ms (hex 96 = 150 decimal)
         # Optional: self.send_serial_cmd("AT SH ...") für Custom Header, wird aber pro PID gesetzt
 
         
@@ -45,7 +48,7 @@ class ObdReader:
             except Exception as e:
                 print(f"[SERIAL RECV DECODED] <decode error: {e}>")
         response = response_bytes.decode(errors="ignore")
-        return response
+        return response_bytes
 
     def parse_formula(self, equation, data_bytes):
         context = {}
@@ -73,22 +76,14 @@ class ObdReader:
                     if details.get("binary_mode"):
                         if self.debug:
                             print(f"Binary mode for PID {pid} aktiv!")
-                    response = self.send_serial_cmd(command_str)
-                    # Rohdaten extrahieren (Antwort parsen)
-                    lines = [l.strip() for l in response.splitlines() if l.strip()]
-                    data_bytes = []
-                    for line in lines:
-                        if line.startswith(mode):
-                            hexbytes = line[len(mode):].strip().split()
-                            data_bytes = [int(b, 16) for b in hexbytes if len(b) == 2]
-                            break
-                    # Debug: Dump raw CAN data as hex
+                    # --- ELM327 Antwort ---
+                    response_bytes = self.send_serial_cmd(command_str)
+                    
                     if self.debug:
-                        print(f"PID {pid_id} ({command_str}) RAW CAN: {response.encode(errors='ignore').hex(' ')}")
-                        print(f"PID {pid_id} ({command_str}) PARSED: {data_bytes}")
+                        print(f"PID {pid_id} ({command_str}) PARSED: {response_bytes}")
                     value = None
-                    if "equation" in details and data_bytes:
-                        value = self.parse_formula(details["equation"], data_bytes)
+                    if "equation" in details and response_bytes:
+                        value = self.parse_formula(details["equation"], response_bytes)
                     else:
                         value = None
                     # MQTT nur wenn debug nicht aktiv
