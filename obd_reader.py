@@ -77,20 +77,21 @@ class ObdReader:
         """
         lines = response_bytes.decode(errors="ignore").split('\r')
         data_bytes = []
+        first = True
         for line in lines:
             line = line.strip()
             if not line:
                 continue
-            # Beispiel: 7EC103D6101FFFFFFFF
             if len(line) > 3 and line[:3].isalnum():
-                payload = line[3:]  # CAN-ID entfernen
-                # Optional: Längenbyte entfernen (je nach Protokoll)
-                # payload = payload[2:]  # z.B. wenn nach CAN-ID ein Längenbyte kommt
+                payload = line[3:]
                 # In 2er-Schritten in Bytes umwandeln
-                for i in range(0, len(payload), 2):
-                    byte_str = payload[i:i+2]
-                    if len(byte_str) == 2:
-                        data_bytes.append(int(byte_str, 16))
+                bytes_list = [int(payload[i:i+2], 16) for i in range(0, len(payload), 2) if len(payload[i:i+2]) == 2]
+                if first:
+                    # Überspringe die ersten 3 Bytes (Länge, Service, PID)
+                    data_bytes.extend(bytes_list[3:])
+                    first = False
+                else:
+                    data_bytes.extend(bytes_list)
         return data_bytes
 
     def read_data(self, pid_list, mqtt_handler):
