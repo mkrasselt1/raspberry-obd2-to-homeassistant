@@ -1,6 +1,7 @@
 import obd
 import time
 import serial
+import re
 
 class ObdReader:
     def __init__(self, port=None, baudrate=None, debug=False):
@@ -65,9 +66,42 @@ class ObdReader:
             var = excel_col_name(idx)
             context[var] = byte
             context[var.lower()] = byte
-        print(f"Context for equation '{equation}': {context}")  # <--- Hier wird das Dictionary ausgegeben
+        # print(f"Context for equation '{equation}': {context}")  # <--- Hier wird das Dictionary ausgegeben
         try:
-            return eval(equation, {}, context)
+            equation = equation.replace('>', '>>').replace('<', '<<')
+            def preprocess_expr(expr):
+                # Int64(A,B,C,D) → (A << 24 | B << 16 | C << 8 | D) (big endian)
+                def int64_fn_repl(match):
+                    bytes_vars = [v.strip() for v in match.group(1).split(',')]
+                    n = len(bytes_vars)
+                    exprs = [f"({v} << {8 * (n - i - 1)})" for i, v in enumerate(bytes_vars)]
+                    return "(" + " | ".join(exprs) + ")"
+                expr = re.sub(r'Int64\s*\(\s*([^)]+)\s*\)', int64_fn_repl, expr)
+
+                # Signed <expr> → signed_int(<expr>)
+                def signed_repl(match):
+                    # Wir wrappen den Ausdruck in signed_int()
+                    inner = match.group(1)
+                    return f"signed_int({inner})"
+                expr = re.sub(r'Signed\s+([^\s:()]+(?:\([^)]+\))?)', signed_repl, expr)
+                
+                # <expr>:<n> → ((<expr> >> n) & 1)
+                # Funktioniert für Variablen, Funktionsaufrufe und Klammerausdrücke
+                expr = re.sub(r'([a-zA-Z_][\w() ,]*)\s*:\s*(\d+)', r'((\1 >> \2) & 1)', expr)
+                return expr
+
+            def signed_int(x, bits=64):
+                """Interpretiert x als signed Integer mit angegebener Bitbreite (default: 64)."""
+                mask = (1 << bits) - 1
+                x = x & mask
+                sign_bit = 1 << (bits - 1)
+                return x - (1 << bits) if (x & sign_bit) else x
+
+            def safe_eval(expr, context=None):
+                expr_transformed = preprocess_expr(expr)
+                return eval(expr_transformed, {"signed_int": signed_int}, context or {})
+            
+            return safe_eval(equation, context)
         except Exception as e:
             if self.debug:
                 print(f"Error evaluating equation '{equation}' with bytes {data_bytes}: {e}")
@@ -114,7 +148,7 @@ class ObdReader:
                 self.send_serial_cmd(f"AT SH {header}")
             response_ascii = self.send_serial_cmd(command_str)
             data_bytes = self.parse_multiframe_response(response_ascii)
-            print(f"Data bytes for PID {pid}: {data_bytes}")
+            print(f"Data bytes for PID {pid}: " + ", ".join([f"{i}:0x{b:02X}" for i, b in enumerate(data_bytes)]))
             # Jetzt für alle Messwerte auswerten
             for pid_id, details in parameters.items():
                 value = None
