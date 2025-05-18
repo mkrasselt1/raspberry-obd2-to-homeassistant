@@ -25,7 +25,8 @@ def main():
         username=config["mqtt"]["user"],
         password=config["mqtt"]["password"],
         topic_prefix=config["mqtt"]["topic_prefix"],
-        device_name=config["obd"].get("device_name", "OBD2 Dongle")
+        device_name=config["obd"].get("device_name", "OBD2 Dongle"),
+        log_enabled=not config.get("debug", False)  # Logging nur wenn debug False!
     )
     mqtt_handler.start_loop()
 
@@ -33,6 +34,7 @@ def main():
     obd_reader = ObdReader(
         port=config["obd"].get("port"),
         baudrate=config["obd"].get("baudrate"),
+        debug=config.get("debug", False)
     )
     obd_reader.connect()
 

@@ -3,10 +3,11 @@ import time
 import serial
 
 class ObdReader:
-    def __init__(self, port=None, baudrate=None):
+    def __init__(self, port=None, baudrate=None, debug=False):
         self.port = port
         self.baudrate = baudrate
         self.ser = None
+        self.debug = debug
 
     def connect(self):
         print("Connecting to OBD2 dongle...")
@@ -35,19 +36,20 @@ class ObdReader:
         try:
             return eval(equation, {}, context)
         except Exception as e:
-            print(f"Error evaluating equation '{equation}' with bytes {data_bytes}: {e}")
+            if self.debug:
+                print(f"Error evaluating equation '{equation}' with bytes {data_bytes}: {e}")
             return None
 
     def read_data(self, pid_list, mqtt_handler):
         for (mode, pid), parameters in pid_list.items():
             for pid_id, details in parameters.items():
                 try:
-                    # Custom PID via pySerial
                     command_str = f"{mode} " + " ".join([pid[i:i+2] for i in range(0, len(pid), 2)])
                     if details.get("header"):
                         self.send_serial_cmd(f"AT SH {details['header']}")
                     if details.get("binary_mode"):
-                        print(f"Binary mode for PID {pid} aktiv!")
+                        if self.debug:
+                            print(f"Binary mode for PID {pid} aktiv!")
                     response = self.send_serial_cmd(command_str)
                     # Rohdaten extrahieren (Antwort parsen)
                     lines = [l.strip() for l in response.splitlines() if l.strip()]
@@ -57,14 +59,20 @@ class ObdReader:
                             hexbytes = line[len(mode):].strip().split()
                             data_bytes = [int(b, 16) for b in hexbytes if len(b) == 2]
                             break
+                    # Debug: Dump raw CAN data as hex
+                    if self.debug:
+                        print(f"PID {pid_id} ({command_str}) RAW CAN: {response.encode(errors='ignore').hex(' ')}")
+                        print(f"PID {pid_id} ({command_str}) PARSED: {data_bytes}")
                     value = None
                     if "equation" in details and data_bytes:
                         value = self.parse_formula(details["equation"], data_bytes)
                     else:
                         value = None
-                    topic = f"{mqtt_handler.topic_prefix}/{details['pid_id']}/state"
-                    mqtt_handler.publish(topic, value)
-                    print(f"Published {details['name']}: {value} {details['unit']} to {topic}")
+                    # MQTT nur wenn debug nicht aktiv
+                    if not self.debug:
+                        topic = f"{mqtt_handler.topic_prefix}/{details['pid_id']}/state"
+                        mqtt_handler.publish(topic, value)
+                        print(f"Published {details['name']}: {value} {details['unit']} to {topic}")
                 except Exception as e:
                     print(f"Failed to read PID {pid}: {e}")
 

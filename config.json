@@ -12,5 +12,6 @@
         "baudrate": 9600,
         "tcp_url": "YOUR_OBD_TCP_HOST:PORT",
         "device_name": "Ioniq EV"
-    }
+    },
+    "debug": true
 }

@@ -12,7 +12,7 @@ def make_safe_id(pid_id):
     return re.sub(r'[^a-zA-Z0-9_]', '_', pid_id.replace(" ", "_"))
 
 class MqttHandler:
-    def __init__(self, broker, port, username, password, topic_prefix, device_name="OBD2 Dongle"):
+    def __init__(self, broker, port, username, password, topic_prefix, device_name="OBD2 Dongle", log_enabled=True):
         self.client = mqtt.Client()
         self.client.username_pw_set(username, password)
         self.client.on_connect = self.on_connect
@@ -21,12 +21,14 @@ class MqttHandler:
         self.initialized_pids = set()
         self.device_name = device_name
         self.mac_address = get_mac_address()
+        self.log_enabled = log_enabled
 
     def on_connect(self, client, userdata, flags, rc):
-        if rc == 0:
-            print("Connected to MQTT Broker!")
-        else:
-            print(f"Failed to connect, return code {rc}")
+        if self.log_enabled:
+            if rc == 0:
+                print("Connected to MQTT Broker!")
+            else:
+                print(f"Failed to connect, return code {rc}")
 
     def publish(self, topic, payload, retain=False):
         self.client.publish(topic, json.dumps(payload), retain=retain)
@@ -63,7 +65,8 @@ class MqttHandler:
         }
         # Publish discovery message
         self.publish(discovery_topic, payload, retain=True)
-        print(f"Initialized PID {name} with MQTT ID {pid_id} in Home Assistant")
+        if self.log_enabled:
+            print(f"Initialized PID {name} with MQTT ID {pid_id} in Home Assistant")
         self.initialized_pids.add(pid_id)
 
     def update_pid_value(self, pid_id, value):
@@ -73,4 +76,5 @@ class MqttHandler:
         safe_pid_id = make_safe_id(pid_id)  # Make the PID ID safe for MQTT
         state_topic = f"{self.topic_prefix}/{safe_pid_id}/state"
         self.publish(state_topic, value)
-        print(f"Updated PID with MQTT ID {pid_id} to value {value}")
+        if self.log_enabled:
+            print(f"Updated PID with MQTT ID {pid_id} to value {value}")
