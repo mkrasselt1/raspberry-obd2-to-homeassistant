@@ -9,7 +9,7 @@ class Elm327:
     """ Implementation for ELM327 """
 
     def __init__(self, config):
-        print("[DEBUG] Initializing ELM327 dongle...")
+        print(f"[DEBUG] Initializing ELM327 dongle on port {config['port']} with baudrate {config['baudrate']}...")
         self._serial_lock = Lock()
         self._serial = serial.Serial(config['port'],
                                      baudrate=config['baudrate'],
@@ -114,13 +114,13 @@ class Elm327:
     def init_dongle(self):
         """ Send some initializing commands to the dongle. """
         print("[DEBUG] Initializing dongle with AT commands...")
-        cmds = (('ATZ', 'ELM327'),
-                ('ATE0', 'OK'),
-                ('ATL1', 'OK'),
-                ('ATS0', 'OK'),
-                ('ATH1', 'OK'),
-                ('ATSTFF', 'OK'),
-                ('ATFE', 'OK'))
+        cmds = (('AT Z', 'ELM327'),
+                ('AT E0', 'OK'),
+                ('AT L1', 'OK'),
+                ('AT S0', 'OK'),
+                ('AT H1', 'OK'),
+                ('AT ST FF', 'OK'),
+                ('AT FE', 'OK'))
 
         for cmd, exp in cmds:
             print(f"[DEBUG] Sending initialization command: {cmd}")
