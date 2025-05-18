@@ -111,10 +111,9 @@ class ObdReader:
                     else:
                         value = None
 
-                    topic = f"{mqtt_handler.topic_prefix}/{details['pid_id']}/state"
                     if self.debug:
-                        print(f"Published {details['name']}: {value} {details['unit']} to {topic}")
-                    mqtt_handler.publish(topic, value)
+                        print(f"Published {details['name']}: {value} {details['unit']}")
+                    mqtt_handler.update_pid_value(details["pid_id"], value)
                 except Exception as e:
                     print(f"Failed to read PID {pid}: {e}")
 
