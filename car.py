@@ -1,7 +1,7 @@
 """ The car polling loop and associated infrastructure """
 from time import time, sleep
 from threading import Thread
-from dongle import NoData, CanError
+from elm327 import NoData, CanError
 
 
 def ifbu(in_bytes):
