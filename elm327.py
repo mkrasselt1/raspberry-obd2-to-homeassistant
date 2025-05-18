@@ -50,11 +50,8 @@ class Elm327:
 
                     ret.extend(data)
 
-                if expect:
-                    expect = bytes(expect, 'ascii')
-                    if expect not in ret:
-                        print(f"[ERROR] Expected '{expect}', but got '{ret}'")
-                        raise Exception(f"Expected {expect}, got {ret}")
+                if expect and expect not in ret:
+                    print(f"[WARNING] Expected '{expect}', but got '{ret}'")
 
         except serial.SerialTimeoutException:
             print("[ERROR] Serial timeout occurred while communicating with dongle.")
@@ -114,7 +111,8 @@ class Elm327:
     def init_dongle(self):
         """ Send some initializing commands to the dongle. """
         print("[DEBUG] Initializing dongle with AT commands...")
-        cmds = (('AT Z', 'ELM327'),
+        cmds = (('AT D', None),  # Set all settings to default
+                ('AT Z', 'ELM327'),
                 ('AT E0', 'OK'),
                 ('AT L1', 'OK'),
                 ('AT S0', 'OK'),
