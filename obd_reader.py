@@ -22,7 +22,11 @@ class ObdReader:
         self.send_serial_cmd("AT D0")     # Display of DLC off (keine Anzeige der Datenlänge)
         self.send_serial_cmd("AT CAF1")   # Automatic formatting on (Antworten werden automatisch formatiert)
         self.send_serial_cmd("AT SP 6")   # Setze Protokoll auf ISO 15765-4 CAN (meist für neuere Fahrzeuge)
+        self.send_serial_cmd("AT ST 96")  # Setze Timeout auf 150ms (Standardwert)
         # Optional: self.send_serial_cmd("AT SH ...") für Custom Header, wird aber pro PID gesetzt
+
+        
+        
 
     def disconnect(self):
         if self.ser:
@@ -59,7 +63,11 @@ class ObdReader:
         for (mode, pid), parameters in pid_list.items():
             for pid_id, details in parameters.items():
                 try:
-                    command_str = f"{mode} " + " ".join([pid[i:i+2] for i in range(0, len(pid), 2)])
+                    # Stelle sicher, dass PID eine gerade Länge hat (ggf. mit führender Null auffüllen)
+                    pid_clean = pid.upper()
+                    if len(pid_clean) % 2 != 0:
+                        pid_clean = "0" + pid_clean
+                    command_str = f"{mode.upper()} " + " ".join([pid_clean[i:i+2] for i in range(0, len(pid_clean), 2)])
                     if details.get("header"):
                         self.send_serial_cmd(f"AT SH {details['header']}")
                     if details.get("binary_mode"):
