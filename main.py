@@ -5,6 +5,32 @@ import elm327
 import time
 from config import load_config
 
+def initialize_homeassistant_sensors(mqtt_handler, car_instance):
+    """ Initialize Home Assistant sensors based on the car's fields. """
+    print("[INFO] Initializing Home Assistant sensors...")
+    base_topic = mqtt_handler.topic_prefix
+
+    # Extract fields from the car instance
+    pids = car_instance.get_fields()
+    for fields in pids:
+        for field in fields:
+            if 'name' not in field:
+                continue  # Skip fields without a name
+
+            sensor_name = field['name']
+            unit = field.get('units', None)
+            scale = field.get('scale', None)
+            device_class = None  # Optional: Define device class if needed
+
+            # Publish sensor configuration to Home Assistant
+            mqtt_handler.initialize_pid(
+                pid=sensor_name,
+                name=sensor_name.replace("_", " ").capitalize(),
+                unit=unit,
+                pid_id=sensor_name
+            )
+            print(f"[INFO] Sensor '{sensor_name}' initialized.")
+
 def main():
     print("[INFO] Starting application...")
 
@@ -58,6 +84,9 @@ def main():
     car_instance = ioniq_bev.IoniqBev(config, dongle_instance, gps)
     Threads.append(car_instance)
     print("[INFO] Car interface initialized successfully.")
+
+    # Initialize Home Assistant sensors
+    initialize_homeassistant_sensors(mqtt_handler, car_instance)
 
     # Start polling loops
     print("[INFO] Starting polling threads...")

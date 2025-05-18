@@ -14,29 +14,28 @@ Fields = (
     {'cmd': b2101, 'canrx': 0x7ec, 'cantx': 0x7e4,
      'fields': (
          {'padding': 6},
-         {'name': 'SOC_BMS', 'width': 1, 'scale': .5},
-         {'name': 'availableChargePower', 'width': 2, 'scale': .01},
-         {'name': 'availableDischargePower', 'width': 2, 'scale': .01},
+         {'name': 'SOC_BMS', 'width': 1, 'scale': .5, "units": "%"},
+         {'name': 'availableChargePower', 'width': 2, 'scale': .01,'units': "kW"},
+         {'name': 'availableDischargePower', 'width': 2, 'scale': .01,'units': "kW"},
          {'name': 'charging_bits', 'width': 1},
-         {'name': 'dcBatteryCurrent', 'width': 2, 'signed': True, 'scale': .1},
-         {'name': 'dcBatteryVoltage', 'width': 2, 'scale': .1},
-         {'name': 'batteryMaxTemperature', 'width': 1, 'signed': True},
-         {'name': 'batteryMinTemperature', 'width': 1, 'signed': True},
-         {'name': 'cellTemp%02d', 'idx': 1, 'cnt': 5, 'width': 1, 'signed': True},
+         {'name': 'dcBatteryCurrent', 'width': 2, 'signed': True, 'scale': .1, 'units': "A"},
+         {'name': 'dcBatteryVoltage', 'width': 2, 'scale': .1, 'units': "V"},
+         {'name': 'batteryMaxTemperature', 'width': 1, 'signed': True, 'units': "°C"},
+         {'name': 'batteryMinTemperature', 'width': 1, 'signed': True, 'units': "°C"},
+         {'name': 'cellTemp%02d', 'idx': 1, 'cnt': 5, 'width': 1, 'signed': True, 'units': "°C"},
          {'padding': 1},
-         {'name': 'batteryInletTemperature', 'width': 1, 'signed': True},
+         {'name': 'batteryInletTemperature', 'width': 1, 'signed': True, 'units': "°C"},
          {'padding': 4},
          {'name': 'fanStatus', 'width': 1},
-         {'name': 'fanFeedback', 'width': 1, 'scale': 100},
-         {'name': 'auxBatteryVoltage', 'width': 1, 'scale': .1},
-         {'name': 'cumulativeChargeCurrent', 'width': 4, 'scale': .1},
-         {'name': 'cumulativeDischargeCurrent', 'width': 4, 'scale': .1},
-         {'name': 'cumulativeEnergyCharged', 'width': 4, 'scale': .1},
-         {'name': 'cumulativeEnergyDischarged', 'width': 4, 'scale': .1},
-         {'name': 'operatingTime', 'width': 4},  # seconds
+         {'name': 'fanFeedback', 'width': 1, 'scale': 100, 'units': "RPM"},
+         {'name': 'auxBatteryVoltage', 'width': 1, 'scale': .1, 'units': "V"},
+         {'name': 'cumulativeChargeCurrent', 'width': 4, 'scale': .1, 'units': "kWh"},
+         {'name': 'cumulativeDischargeCurrent', 'width': 4, 'scale': .1, 'units': "kWh"},
+         {'name': 'cumulativeEnergyCharged', 'width': 4, 'scale': .1, 'units': "kWh"},
+         {'name': 'cumulativeEnergyDischarged', 'width': 4, 'scale': .1, 'units': "kWh"},
+         {'name': 'operatingTime', 'width': 4, 'units':'s'},  # seconds
          {'padding': 3},
-         {'name': 'driveMotorSpeed', 'width': 2, 'signed': True,
-          'offset': 0, 'scale': 1},
+         {'name': 'driveMotorSpeed', 'width': 2, 'signed': True, 'offset': 0, 'scale': 1, 'units': "RPM"},
          {'padding': 4},
          # Len: 56
      )
@@ -44,32 +43,32 @@ Fields = (
     {'cmd': b2102, 'canrx': 0x7ec, 'cantx': 0x7e4,
      'fields': (
          {'padding': 6},
-         {'name': 'cellVoltage%02d', 'idx': 1, 'cnt': 32, 'width': 1, 'scale': .02},
+         {'name': 'cellVoltage%02d', 'idx': 1, 'cnt': 32, 'width': 1, 'scale': .02, 'units': "V"},
          # Len: 38
      )
      },
     {'cmd': b2103, 'canrx': 0x7ec, 'cantx': 0x7e4,
      'fields': (
          {'padding': 6},
-         {'name': 'cellVoltage%02d', 'idx': 33, 'cnt': 32, 'width': 1, 'scale': .02},
+         {'name': 'cellVoltage%02d', 'idx': 33, 'cnt': 32, 'width': 1, 'scale': .02, 'units': "V"},
          # Len: 38
      )
      },
     {'cmd': b2104, 'canrx': 0x7ec, 'cantx': 0x7e4,
      'fields': (
          {'padding': 6},
-         {'name': 'cellVoltage%02d', 'idx': 65, 'cnt': 32, 'width': 1, 'scale': .02},
+         {'name': 'cellVoltage%02d', 'idx': 65, 'cnt': 32, 'width': 1, 'scale': .02, 'units': "V"},
          # Len: 38
      )
      },
     {'cmd': b2105, 'canrx': 0x7ec, 'cantx': 0x7e4,
      'fields': (
          {'padding': 11},
-         {'name': 'cellTemp%02d', 'idx': 6, 'cnt': 7, 'width': 1, 'signed': True},
+         {'name': 'cellTemp%02d', 'idx': 6, 'cnt': 7, 'width': 1, 'signed': True, 'units': "°C"},
          {'padding': 9},
-         {'name': 'soh', 'width': 2, 'scale': .1},
+         {'name': 'soh', 'width': 2, 'scale': .1, 'units': "%"},
          {'padding': 4},
-         {'name': 'SOC_DISPLAY', 'width': 1, 'scale': .5},
+         {'name': 'SOC_DISPLAY', 'width': 1, 'scale': .5, "units": "%"},
          {'padding': 11},
          # Len: 45
      )
@@ -77,7 +76,7 @@ Fields = (
     {'cmd': b2180, 'canrx': 0x7ee, 'cantx': 0x7e6,
      'fields': (
          {'padding': 14},
-         {'name': 'externalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
+         {'name': 'externalTemperature', 'width': 1, 'scale': .5, 'offset': -40, 'units': "°C"},
          {'padding': 10},
          # Len: 25
      )
@@ -85,7 +84,7 @@ Fields = (
     {'cmd': b22b002, 'canrx': 0x7ce, 'cantx': 0x7c6, 'optional': True,
      'fields': (
          {'padding': 9},
-         {'name': 'odo', 'width': 3},
+         {'name': 'odo', 'width': 3, 'units': "km"},
          {'padding': 3},
          # Len: 15
      )
@@ -108,29 +107,18 @@ Fields = (
 class IoniqBev(Car):
     """ Class for Ioniq Electric """
 
-    def __init__(self, config, dongle, watchdog, gps):
-        Car.__init__(self, config, dongle, watchdog, gps)
+    def __init__(self, config, dongle, gps):
+        super().__init__(config, dongle, gps)
         self._dongle.set_protocol('CAN_11_500')
-        self._isotp = IsoTpDecoder(self._dongle, Fields)
+        self._isotp = IsoTpDecoder(self._dongle, self.get_fields())
+
+    def get_fields(self):
+        """ Return the fields for the Ioniq Electric """
+        return Fields
 
     def read_dongle(self, data):
         """ Fetch data from CAN-bus and decode it.
             "data" needs to be a dictionary that will
             be modified with decoded data """
-
-        data.update(self.get_base_data())
         data.update(self._isotp.get_data())
 
-    def get_base_data(self):
-        return {
-            "CAPACITY": 28,
-            "SLOW_SPEED": 2.3,
-            "NORMAL_SPEED": 4.6,
-            "FAST_SPEED": 50.0
-        }
-
-    def get_abrp_model(self):
-        return 'hyundai:ioniq:17:28:other'
-
-    def get_evn_model(self):
-        return 'IONIQ_BEV'
