@@ -41,14 +41,11 @@ class ObdReader:
         self.ser.write((cmd + "\r").encode())
         time.sleep(0.2)
         response_bytes = self.ser.read_all()
+        response_ascii = response_bytes.decode(errors="ignore")
         if self.debug:
             print(f"[SERIAL RECV] {response_bytes.hex(' ')}")
-            try:
-                print(f"[SERIAL RECV DECODED] {response_bytes.decode(errors='ignore')}")
-            except Exception as e:
-                print(f"[SERIAL RECV DECODED] <decode error: {e}>")
-        response = response_bytes.decode(errors="ignore")
-        return response_bytes
+            print(f"[SERIAL RECV DECODED] {response_ascii}")
+        return response_ascii  # <-- ASCII-Text zurückgeben
 
     def parse_formula(self, equation, data_bytes):
         context = {}
@@ -71,27 +68,28 @@ class ObdReader:
                 print(f"Error evaluating equation '{equation}' with bytes {data_bytes}: {e}")
             return None
 
-    def parse_multiframe_response(self, response_bytes):
+    def parse_multiframe_response(self, response_ascii):
         """
-        Zerlegt die Multi-Frame-Antwort in eine Liste von Nutzdaten-Bytes.
+        Zerlegt die Multi-Frame-Antwort (ASCII) in eine Liste von Nutzdaten-Bytes.
         """
-        lines = response_bytes.decode(errors="ignore").split('\r')
+        lines = response_ascii.split('\r')
         data_bytes = []
         first = True
         for line in lines:
             line = line.strip()
-            if not line:
+            if not line or not line[:3].isalnum():
                 continue
-            if len(line) > 3 and line[:3].isalnum():
-                payload = line[3:]
-                # In 2er-Schritten in Bytes umwandeln
-                bytes_list = [int(payload[i:i+2], 16) for i in range(0, len(payload), 2) if len(payload[i:i+2]) == 2]
-                if first:
-                    # Überspringe die ersten 3 Bytes (Länge, Service, PID)
-                    data_bytes.extend(bytes_list[3:])
-                    first = False
-                else:
-                    data_bytes.extend(bytes_list)
+            payload = line[3:]  # CAN-ID entfernen
+            # Prompt-Zeichen oder sonstige Steuerzeichen entfernen
+            payload = payload.replace('>', '').replace(' ', '')
+            # In 2er-Schritten in Bytes umwandeln
+            bytes_list = [int(payload[i:i+2], 16) for i in range(0, len(payload), 2) if len(payload[i:i+2]) == 2]
+            if first:
+                # Überspringe die ersten 3 Bytes (Länge, Service, PID)
+                data_bytes.extend(bytes_list[3:])
+                first = False
+            else:
+                data_bytes.extend(bytes_list)
         return data_bytes
 
     def read_data(self, pid_list, mqtt_handler):
@@ -104,20 +102,18 @@ class ObdReader:
                     command_str = ''.join([pid_clean[i:i+2] for i in range(0, len(pid_clean), 2)])
                     if details.get("header"):
                         self.send_serial_cmd(f"AT SH {details['header']}")
-                    response_bytes = self.send_serial_cmd(command_str)
-                    if self.debug:
-                        print(f"PID {pid_id} ({command_str}) PARSED: {response_bytes}")
+                    response_ascii = self.send_serial_cmd(command_str)
                     value = None
-                    if "equation" in details and response_bytes:
-                        # Multi-Frame-Parsing
-                        data_bytes = self.parse_multiframe_response(response_bytes)
+                    if "equation" in details and response_ascii:
+                        data_bytes = self.parse_multiframe_response(response_ascii)
                         print(f"Data bytes: {data_bytes}")
                         value = self.parse_formula(details["equation"], data_bytes)
                     else:
                         value = None
+
+                    topic = f"{mqtt_handler.topic_prefix}/{details['pid_id']}/state"
                     if self.debug:
                         print(f"Published {details['name']}: {value} {details['unit']} to {topic}")
-                    topic = f"{mqtt_handler.topic_prefix}/{details['pid_id']}/state"
                     mqtt_handler.publish(topic, value)
                 except Exception as e:
                     print(f"Failed to read PID {pid}: {e}")
