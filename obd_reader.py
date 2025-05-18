@@ -111,6 +111,7 @@ class ObdReader:
                     if "equation" in details and response_bytes:
                         # Multi-Frame-Parsing
                         data_bytes = self.parse_multiframe_response(response_bytes)
+                        print(f"Data bytes: {data_bytes}")
                         value = self.parse_formula(details["equation"], data_bytes)
                     else:
                         value = None
