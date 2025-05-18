@@ -61,6 +61,7 @@ class ObdReader:
             var = excel_col_name(idx)
             context[var] = byte
             context[var.lower()] = byte
+        print(f"Context for equation '{equation}': {context}")  # <--- Hier wird das Dictionary ausgegeben
         try:
             return eval(equation, {}, context)
         except Exception as e:
