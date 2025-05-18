@@ -52,7 +52,7 @@ class ObdReader:
         offset = 0  # Standardmäßig kein Offset
         if len(data_bytes) > 3:
             # Prüfe, ob die ersten drei Bytes wie erwartet sind (optional)
-            offset = 3  # oder offset = 3, wenn du immer ab dem 4. Byte starten willst
+            offset = 2  # oder offset = 3, wenn du immer ab dem 4. Byte starten willst
         for idx, byte in enumerate(data_bytes[offset:]):
             # Generate Excel-style column names (A, B, ..., Z, AA, AB, ...)
             def excel_col_name(n):
@@ -99,28 +99,30 @@ class ObdReader:
 
     def read_data(self, pid_list, mqtt_handler):
         for pid, parameters in pid_list.items():
+            # PID nur einmal abfragen!
+            pid_clean = pid.upper()
+            if len(pid_clean) % 2 != 0:
+                pid_clean = "0" + pid_clean
+            command_str = ''.join([pid_clean[i:i+2] for i in range(0, len(pid_clean), 2)])
+            # Optional: Header setzen, wenn einer der Messwerte einen Header definiert
+            header = None
+            for details in parameters.values():
+                if details.get("header"):
+                    header = details["header"]
+                    break
+            if header:
+                self.send_serial_cmd(f"AT SH {header}")
+            response_ascii = self.send_serial_cmd(command_str)
+            data_bytes = self.parse_multiframe_response(response_ascii)
+            print(f"Data bytes for PID {pid}: {data_bytes}")
+            # Jetzt für alle Messwerte auswerten
             for pid_id, details in parameters.items():
-                try:
-                    pid_clean = pid.upper()
-                    if len(pid_clean) % 2 != 0:
-                        pid_clean = "0" + pid_clean
-                    command_str = ''.join([pid_clean[i:i+2] for i in range(0, len(pid_clean), 2)])
-                    if details.get("header"):
-                        self.send_serial_cmd(f"AT SH {details['header']}")
-                    response_ascii = self.send_serial_cmd(command_str)
-                    value = None
-                    if "equation" in details and response_ascii:
-                        data_bytes = self.parse_multiframe_response(response_ascii)
-                        print(f"Data bytes: {data_bytes}")
-                        value = self.parse_formula(details["equation"], data_bytes)
-                    else:
-                        value = None
-
-                    if self.debug:
-                        print(f"Published {details['name']}: {value} {details['unit']}")
-                    mqtt_handler.update_pid_value(details["pid_id"], value)
-                except Exception as e:
-                    print(f"Failed to read PID {pid}: {e}")
+                value = None
+                if "equation" in details and data_bytes:
+                    value = self.parse_formula(details["equation"], data_bytes)
+                if self.debug:
+                    print(f"Published {details['name']}: {value} {details['unit']}")
+                mqtt_handler.update_pid_value(details["pid_id"], value)
 
     def start_reading(self, pid_list, mqtt_handler, interval=1):
         try:
