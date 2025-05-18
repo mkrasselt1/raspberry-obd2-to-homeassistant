@@ -31,9 +31,9 @@ class Elm327:
         print(f"[DEBUG] Sending command to dongle: {cmd}")
         try:
             with self._serial_lock:
-                while self._serial.in_waiting:   # Clear the input buffer
-                    self._serial.read(self._serial.in_waiting)
-                    sleep(0.1)
+                #while self._serial.in_waiting:   # Clear the input buffer
+                #    self._serial.read(self._serial.in_waiting)
+                #    sleep(0.1)
 
                 self._serial.write(bytes(cmd + '\r\n', 'ascii'))
                 ret = bytearray()
@@ -60,7 +60,7 @@ class Elm327:
         print(f"[DEBUG] Response from dongle: {ret}")
         return ret.strip(b'\r\n')
 
-    def send_at_cmd(self, cmd, expect):
+    def send_at_cmd(self, cmd, expect=None):
         """ Send AT command to dongle and return response. """
         print(f"[DEBUG] Sending AT command: {cmd}")
         ret = self.talk_to_dongle(cmd, expect)
@@ -112,13 +112,14 @@ class Elm327:
         """ Send some initializing commands to the dongle. """
         print("[DEBUG] Initializing dongle with AT commands...")
         cmds = (('AT D', None),  # Set all settings to default
-                ('AT Z', 'ELM327'),
-                ('AT E0', 'OK'),
-                ('AT L1', 'OK'),
-                ('AT S0', 'OK'),
-                ('AT H1', 'OK'),
-                ('AT ST FF', 'OK'),
-                ('AT FE', 'OK'))
+                ('AT Z', None), #'ELM327'),
+                ('AT E0', None), #'OK'),
+                ('AT L1', None), #'OK'),
+                ('AT S0', None), #'OK'),
+                ('AT H1', None), #'OK'),
+                ('AT ST FF', None), #'OK'),
+                ('AT FE', None), #'OK'))
+                )
 
         for cmd, exp in cmds:
             print(f"[DEBUG] Sending initialization command: {cmd}")
@@ -129,10 +130,10 @@ class Elm327:
         """ Set the variant of CAN protocol """
         print(f"[DEBUG] Setting protocol: {prot}")
         if prot == 'CAN_11_500':
-            self.send_at_cmd('ATSP6', 'OK')
+            self.send_at_cmd('AT SP 6', None) #'OK')
             self._is_extended = False
         elif prot == 'CAN_29_500':
-            self.send_at_cmd('ATSP7', 'OK')
+            self.send_at_cmd('AT SP 7', None) #'OK')
             self._is_extended = True
         else:
             print(f"[ERROR] Unsupported protocol: {prot}")
@@ -147,7 +148,7 @@ class Elm327:
             can_id = format(can_id, '08X' if self._is_extended else '03X')
 
         if self._current_canid != can_id:
-            self.send_at_cmd('ATSH' + can_id)
+            self.send_at_cmd('AT SH ' + can_id)
             self._current_canid = can_id
 
     def set_can_rx_mask(self, mask):
@@ -159,7 +160,7 @@ class Elm327:
             mask = format(mask, '08X' if self._is_extended else '03X')
 
         if self._current_canmask != mask:
-            self.send_at_cmd('ATCM' + mask)
+            self.send_at_cmd('AT CM ' + mask)
             self._current_canmask = mask
 
     def set_can_rx_filter(self, can_id):
@@ -171,13 +172,13 @@ class Elm327:
             can_id = format(can_id, '08X' if self._is_extended else '03X')
 
         if self._current_canfilter != can_id:
-            self.send_at_cmd('ATCF' + can_id)
+            self.send_at_cmd('AT CF ' + can_id)
             self._current_canfilter = can_id
 
     def get_obd_voltage(self):
         """ Get the voltage at the OBD port """
         print("[DEBUG] Getting OBD voltage...")
-        ret = self.send_at_cmd('ATRV', None)
+        ret = self.send_at_cmd('AT RV ', None)
         voltage = round(float(ret[:-1]), 2)
         print(f"[DEBUG] OBD voltage: {voltage} V")
         return voltage
@@ -186,4 +187,4 @@ class Elm327:
         """ Calibrate the voltage sensor using an
             externally measured voltage reading """
         print(f"[DEBUG] Calibrating OBD voltage to: {real_voltage} V")
-        self.send_at_cmd('ATCV%04.0f' % (real_voltage * 100))
+        self.send_at_cmd('AT CV %04.0f' % (real_voltage * 100))
