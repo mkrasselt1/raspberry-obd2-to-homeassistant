@@ -13,10 +13,16 @@ class ObdReader:
         print("Connecting to OBD2 dongle...")
         self.ser = serial.Serial(self.port, self.baudrate, timeout=1)
         time.sleep(1)
-        self.send_serial_cmd("AT Z")
-        self.send_serial_cmd("AT E0")
-        self.send_serial_cmd("AT L0")
-        self.send_serial_cmd("AT S0")
+        # --- ELM327 Initialisierung ---
+        self.send_serial_cmd("AT Z")      # Reset ELM327
+        self.send_serial_cmd("AT E0")     # Echo off (Antworten enthalten nicht den gesendeten Befehl)
+        self.send_serial_cmd("AT L0")     # Linefeeds off (keine Zeilenumbrüche in Antworten)
+        self.send_serial_cmd("AT S0")     # Spaces off (keine Leerzeichen in Antworten)
+        self.send_serial_cmd("AT H0")     # Headers off (nur Daten, keine CAN-IDs in Antwort)
+        self.send_serial_cmd("AT D0")     # Display of DLC off (keine Anzeige der Datenlänge)
+        self.send_serial_cmd("AT CAF1")   # Automatic formatting on (Antworten werden automatisch formatiert)
+        self.send_serial_cmd("AT SP 6")   # Setze Protokoll auf ISO 15765-4 CAN (meist für neuere Fahrzeuge)
+        # Optional: self.send_serial_cmd("AT SH ...") für Custom Header, wird aber pro PID gesetzt
 
     def disconnect(self):
         if self.ser:
