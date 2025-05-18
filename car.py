@@ -36,7 +36,6 @@ class Car:
         self._gps = gps
         self._poll_interval = 1
         self._thread = None
-        self._skip_polling = False
         self._running = False
         self.last_data = 0
         self._data_callbacks = []
@@ -90,12 +89,9 @@ class Car:
                 'fix_mode':     0,
             }
 
-            if not self._skip_polling:
-                if self._skip_polling:
-                    self._skip_polling = False
-                try:
-                    self.read_dongle(data)  # readDongle updates data inplace
-                    self.last_data = now
+                
+            self.read_dongle(data)  # readDongle updates data inplace
+            self.last_data = now
 
             fix = self._gps.fix()
             if fix and fix['mode'] > 1:
@@ -130,10 +126,7 @@ class Car:
                 if self._poll_interval > 0:
                     interval = self._poll_interval - (time() - now)
                     sleep(max(0, interval))
-
-                elif self._skip_polling or data.get('charging'):
-                    # Limit poll rate while charging or if polling shall be skipped
-                    sleep(1)
+                sleep(1)
 
     def register_data(self, callback):
         """ Register a callback that gets called with new data. """
