@@ -50,6 +50,7 @@ class ObdReader:
 
     def parse_formula(self, equation, data_bytes):
         context = {}
+        context_lower = {}
         offset = 0  # Standardmäßig kein Offset
         if len(data_bytes) > 3:
             # Prüfe, ob die ersten drei Bytes wie erwartet sind (optional)
@@ -65,8 +66,9 @@ class ObdReader:
 
             var = excel_col_name(idx)
             context[var] = byte
-            context[var.lower()] = byte
-        # print(f"Context for equation '{equation}': {context}")  # <--- Hier wird das Dictionary ausgegeben
+            context_lower[var.lower()] = byte
+        print(f"Context for equation '{equation}': {context}")  # <--- Hier wird das Dictionary ausgegeben
+        context = {**context, **context_lower}
         try:
             equation = equation.replace('>', '>>').replace('<', '<<')
             def preprocess_expr(expr):
