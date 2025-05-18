@@ -71,25 +71,46 @@ class ObdReader:
                 print(f"Error evaluating equation '{equation}' with bytes {data_bytes}: {e}")
             return None
 
+    def parse_multiframe_response(self, response_bytes):
+        """
+        Zerlegt die Multi-Frame-Antwort in eine Liste von Nutzdaten-Bytes.
+        """
+        lines = response_bytes.decode(errors="ignore").split('\r')
+        data_bytes = []
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            # Beispiel: 7EC103D6101FFFFFFFF
+            if len(line) > 3 and line[:3].isalnum():
+                payload = line[3:]  # CAN-ID entfernen
+                # Optional: Längenbyte entfernen (je nach Protokoll)
+                # payload = payload[2:]  # z.B. wenn nach CAN-ID ein Längenbyte kommt
+                # In 2er-Schritten in Bytes umwandeln
+                for i in range(0, len(payload), 2):
+                    byte_str = payload[i:i+2]
+                    if len(byte_str) == 2:
+                        data_bytes.append(int(byte_str, 16))
+        return data_bytes
+
     def read_data(self, pid_list, mqtt_handler):
         for pid, parameters in pid_list.items():
             for pid_id, details in parameters.items():
                 try:
-                    # Stelle sicher, dass PID eine gerade Länge hat (ggf. mit führender Null auffüllen)
                     pid_clean = pid.upper()
                     if len(pid_clean) % 2 != 0:
                         pid_clean = "0" + pid_clean
                     command_str = ''.join([pid_clean[i:i+2] for i in range(0, len(pid_clean), 2)])
                     if details.get("header"):
                         self.send_serial_cmd(f"AT SH {details['header']}")
-                    # --- ELM327 Antwort ---
                     response_bytes = self.send_serial_cmd(command_str)
-                    
                     if self.debug:
                         print(f"PID {pid_id} ({command_str}) PARSED: {response_bytes}")
                     value = None
                     if "equation" in details and response_bytes:
-                        value = self.parse_formula(details["equation"], response_bytes)
+                        # Multi-Frame-Parsing
+                        data_bytes = self.parse_multiframe_response(response_bytes)
+                        value = self.parse_formula(details["equation"], data_bytes)
                     else:
                         value = None
                     # MQTT nur wenn debug nicht aktiv
