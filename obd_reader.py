@@ -19,8 +19,8 @@ class ObdReader:
         self.send_serial_cmd("AT E0")     # Echo off (Antworten enthalten nicht den gesendeten Befehl)
         self.send_serial_cmd("AT L0")     # Linefeeds off (keine Zeilenumbrüche in Antworten)
         self.send_serial_cmd("AT S0")     # Spaces off (keine Leerzeichen in Antworten)
-        self.send_serial_cmd("AT H0")     # Headers off (nur Daten, keine CAN-IDs in Antwort)
-        #self.send_serial_cmd("AT H1")     # Headers on (include CAN IDs in responses)
+        ##self.send_serial_cmd("AT H0")     # Headers off (nur Daten, keine CAN-IDs in Antwort)
+        self.send_serial_cmd("AT H1")     # Headers on (include CAN IDs in responses)
         self.send_serial_cmd("AT D0")     # Display of DLC off (keine Anzeige der Datenlänge)
         self.send_serial_cmd("AT CAF1")   # Automatic formatting on (Antworten werden automatisch formatiert)
         self.send_serial_cmd("AT SP 0")   # Set protocol to automatic
