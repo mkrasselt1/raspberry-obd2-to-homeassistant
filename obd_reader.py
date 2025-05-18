@@ -49,7 +49,11 @@ class ObdReader:
 
     def parse_formula(self, equation, data_bytes):
         context = {}
-        for idx, byte in enumerate(data_bytes):
+        offset = 0  # Standardmäßig kein Offset
+        if len(data_bytes) > 3:
+            # Prüfe, ob die ersten drei Bytes wie erwartet sind (optional)
+            offset = 3  # oder offset = 3, wenn du immer ab dem 4. Byte starten willst
+        for idx, byte in enumerate(data_bytes[offset:]):
             # Generate Excel-style column names (A, B, ..., Z, AA, AB, ...)
             def excel_col_name(n):
                 name = ""
