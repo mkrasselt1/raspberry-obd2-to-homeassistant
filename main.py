@@ -13,7 +13,8 @@ def main():
         from socat_manager import SocatManager
         socat_manager = SocatManager(
             tcp_url=config["obd"]["tcp_url"],
-            serial_port="/dev/ttyOBD2"
+            serial_port=config["obd"].get("port", "/dev/ttyOBD2"),
+            baudrate=config["obd"].get("baudrate", 9600)
         )
         socat_manager.start()
 
