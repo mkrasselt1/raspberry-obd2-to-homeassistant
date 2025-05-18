@@ -53,10 +53,17 @@ class ObdReader:
     def parse_formula(self, equation, data_bytes):
         context = {}
         for idx, byte in enumerate(data_bytes):
-            var = chr(ord('A') + idx)
+            # Generate Excel-style column names (A, B, ..., Z, AA, AB, ...)
+            def excel_col_name(n):
+                name = ""
+                while n >= 0:
+                    name = chr(n % 26 + ord('A')) + name
+                    n = n // 26 - 1
+                return name
+
+            var = excel_col_name(idx)
             context[var] = byte
-            var_lower = chr(ord('a') + idx)
-            context[var_lower] = byte
+            context[var.lower()] = byte
         try:
             return eval(equation, {}, context)
         except Exception as e:
