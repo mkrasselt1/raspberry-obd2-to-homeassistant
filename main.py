@@ -24,7 +24,8 @@ def main():
         port=config["mqtt"]["port"],
         username=config["mqtt"]["user"],
         password=config["mqtt"]["password"],
-        topic_prefix=config["mqtt"]["topic_prefix"]
+        topic_prefix=config["mqtt"]["topic_prefix"],
+        device_name=config["obd"].get("device_name", "OBD2 Dongle")
     )
     mqtt_handler.start_loop()
 

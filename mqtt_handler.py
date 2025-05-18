@@ -1,14 +1,21 @@
 import paho.mqtt.client as mqtt
 import json
+import uuid
+
+def get_mac_address():
+    mac = uuid.getnode()
+    return ':'.join(['{:02x}'.format((mac >> ele) & 0xff) for ele in range(40, -1, -8)])
 
 class MqttHandler:
-    def __init__(self, broker, port, username, password, topic_prefix):
+    def __init__(self, broker, port, username, password, topic_prefix, device_name="OBD2 Dongle"):
         self.client = mqtt.Client()
         self.client.username_pw_set(username, password)
         self.client.on_connect = self.on_connect
         self.client.connect(broker, port, 60)
         self.topic_prefix = topic_prefix
-        self.initialized_pids = set()  # Keep track of initialized PIDs to avoid duplicate autodiscovery
+        self.initialized_pids = set()
+        self.device_name = device_name
+        self.mac_address = get_mac_address()
 
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
@@ -42,8 +49,8 @@ class MqttHandler:
             "state_class": "measurement",  # Define state class (e.g., measurement)
             "unique_id": f"obd2_{pid_id}",
             "device": {
-                "identifiers": ["obd2_device"],
-                "name": "OBD2 Dongle",
+                "identifiers": [f"obd2_device_{self.mac_address}"],
+                "name": self.device_name,
                 "manufacturer": "Michael Krasselt",
                 "model": "OBD2 Dongle via PI"
             }

@@ -10,6 +10,7 @@
         "mode": "uart",
         "port": "/dev/ttyUSB0",
         "baudrate": 9600,
-        "tcp_url": "YOUR_OBD_TCP_HOST:PORT"
+        "tcp_url": "YOUR_OBD_TCP_HOST:PORT",
+        "device_name": "Ioniq EV"
     }
 }
