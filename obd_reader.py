@@ -23,8 +23,8 @@ class ObdReader:
         self.send_serial_cmd("AT H1")     # Headers on (include CAN IDs in responses)
         self.send_serial_cmd("AT D0")     # Display of DLC off (keine Anzeige der Datenlänge)
         self.send_serial_cmd("AT CAF1")   # Automatic formatting on (Antworten werden automatisch formatiert)
-        self.send_serial_cmd("AT SP 0")   # Set protocol to automatic
-        #self.send_serial_cmd("AT SP 6")   # Setze Protokoll auf ISO 15765-4 CAN (meist für neuere Fahrzeuge)
+        #self.send_serial_cmd("AT SP 0")   # Set protocol to automatic
+        self.send_serial_cmd("AT SP 6")   # Setze Protokoll auf ISO 15765-4 CAN (meist für neuere Fahrzeuge)
         self.send_serial_cmd("AT ST 96")  # Set timeout to 150ms (hex 96 = 150 decimal)
         # Optional: self.send_serial_cmd("AT SH ...") für Custom Header, wird aber pro PID gesetzt
 
@@ -72,19 +72,16 @@ class ObdReader:
             return None
 
     def read_data(self, pid_list, mqtt_handler):
-        for (mode, pid), parameters in pid_list.items():
+        for pid, parameters in pid_list.items():
             for pid_id, details in parameters.items():
                 try:
                     # Stelle sicher, dass PID eine gerade Länge hat (ggf. mit führender Null auffüllen)
                     pid_clean = pid.upper()
                     if len(pid_clean) % 2 != 0:
                         pid_clean = "0" + pid_clean
-                    command_str = f"{mode.upper()} " + " ".join([pid_clean[i:i+2] for i in range(0, len(pid_clean), 2)])
+                    command_str = ''.join([pid_clean[i:i+2] for i in range(0, len(pid_clean), 2)])
                     if details.get("header"):
                         self.send_serial_cmd(f"AT SH {details['header']}")
-                    if details.get("binary_mode"):
-                        if self.debug:
-                            print(f"Binary mode for PID {pid} aktiv!")
                     # --- ELM327 Antwort ---
                     response_bytes = self.send_serial_cmd(command_str)
                     

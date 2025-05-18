@@ -14,37 +14,25 @@ def load_pids_from_folder(folder_path):
                     for row in csv_reader:
                         pid_id = row[0]       # Column 0: id
                         name = row[1]         # Column 1: name
-                        pid_mode = row[2]     # Column 2: mode+pid (e.g. "2105")
+                        pid = row[2]     # Column 2: pid
                         equation = row[3]     # Column 3: equation
                         min_value = row[4]    # Column 4: min
                         max_value = row[5]    # Column 5: max
                         unit = row[6]         # Column 6: unit
                         header = row[7]       # Column 7: header
 
-                        # Split mode and pid (first 2 chars = mode, rest = pid)
-                        mode = pid_mode[:2]
-                        pid = pid_mode[2:]
+                        
+                        if pid not in pid_list:
+                            pid_list[pid] = {}
 
-                        # Prüfe auf Binary-Modus
-                        binary_mode = False
-                        if mode.endswith("b"):
-                            mode = mode[:-1]
-                            binary_mode = True
-
-                        key = (mode, pid)
-                        if key not in pid_list:
-                            pid_list[key] = {}
-
-                        pid_list[key][pid_id] = {
+                        pid_list[pid][pid_id] = {
                             "name": name,
                             "equation": equation,
-                            "mode": mode,
                             "min": min_value,
                             "max": max_value,
                             "unit": unit,
                             "pid_id": pid_id,
-                            "header": header,
-                            "binary_mode": binary_mode
+                            "header": header
                         }
     except Exception as e:
         print(f"Failed to load PIDs: {e}")
