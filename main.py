@@ -1,10 +1,12 @@
 from mqtt_handler import MqttHandler
-from obd_reader import ObdReader
+from gpspoller import GpsPoller
+import car
+import dongle
 import time
-from pid_loader import load_pids_from_folder
 from config import load_config
 
 def main():
+    # Load configuration
     config = load_config("config.json")
     socat_manager = None
 
@@ -30,39 +32,52 @@ def main():
     )
     mqtt_handler.start_loop()
 
-    # Initialize OBD Reader
-    obd_reader = ObdReader(
-        port=config["obd"].get("port"),
-        baudrate=config["obd"].get("baudrate"),
-        debug=config.get("debug", False)
-    )
-    obd_reader.connect()
+    # Load OBD2 interface module
+    DONGLE = dongle.load()
 
-    # Load PIDs from folder
-    pids = load_pids_from_folder("pids")
-    
-    # Initialize PIDs in Home Assistant
-    for pid, parameters in pids.items():
-        for pid_id, details in parameters.items():
-            # Initialisiere PID in Home Assistant
-            mqtt_handler.initialize_pid(
-                pid=pid,
-                name=details["name"],
-                unit=details["unit"],
-                pid_id=details["pid_id"]
-            )
+    # Load car module
+    CAR = car.load("ioniq_bev")
 
-    # Kontinuierlich PIDs lesen und veröffentlichen
+    Threads = []
+
+    # Init dongle
+    dongle_instance = DONGLE(config['obd'])
+
+    # Init GPS interface
+    gps = GpsPoller()
+    Threads.append(gps)
+
+    # Init car
+    car_instance = CAR(config['car'], dongle_instance, gps)
+    Threads.append(car_instance)
+
+    # Start polling loops
+    for t in Threads:
+        t.start()
+
     try:
         while True:
-            obd_reader.read_data(pids, mqtt_handler)
-            time.sleep(1)  # Polling-Intervall
+            now = time.time()
+            for t in Threads:
+                status = t.check_thread()
+                if not status:
+                    raise Exception(f"Thread {t} failed.")
+
+            # Publish car data to MQTT
+            car_data = {}
+            car_instance.read_dongle(car_data)
+            for key, value in car_data.items():
+                mqtt_handler.update_pid_value(key, value)
+
+            # Ensure messages get printed to the console.
+            time.sleep(1)
+
     except KeyboardInterrupt:
         print("Shutting down...")
     finally:
+        for t in Threads[::-1]:  # reverse Threads
+            t.stop()
         mqtt_handler.stop_loop()
-        if socat_manager:
-            socat_manager.stop()
 
 if __name__ == "__main__":
     main()
