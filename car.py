@@ -1,7 +1,6 @@
 """ The car polling loop and associated infrastructure """
 from time import time, sleep
 from threading import Thread
-import logging
 from dongle import NoData, CanError
 
 
@@ -26,18 +25,16 @@ def ffbs(in_bytes):
 
 
 class DataError(ValueError):
-    """ Problem with data occured """
+    """ Problem with data occurred """
 
 
 class Car:
     """ Abstract class implementing the car polling loop.
         Subclasses need to implement read_dongle """
 
-    def __init__(self, config, dongle, watchdog, gps):
-        self._log = logging.getLogger("EVNotiPi/Car")
+    def __init__(self, config, dongle, gps):
         self._config = config
         self._dongle = dongle
-        self._watchdog = watchdog
         self._gps = gps
         self._poll_interval = 1
         self._thread = None
@@ -66,7 +63,7 @@ class Car:
         while self._running:
             now = time()
 
-            # initialize data with required fields; saves all those checks later
+            # Initialize data with required fields; saves all those checks later
             data = {
                 'timestamp':    now,
                 # Base:
@@ -94,19 +91,17 @@ class Car:
                 'speed':        None,
                 'fix_mode':     0,
             }
-            if not self._skip_polling or self._watchdog.is_car_available():
+
+            if not self._skip_polling:
                 if self._skip_polling:
-                    self._log.info("Resume polling.")
                     self._skip_polling = False
                 try:
                     self.read_dongle(data)  # readDongle updates data inplace
                     self.last_data = now
-                except CanError as err:
-                    self._log.warning(err)
+                except CanError:
+                    pass
                 except NoData:
-                    self._log.info("NO DATA")
-                    if not self._watchdog.is_car_available():
-                        self._log.info("Car off detected. Stop polling until car on.")
+                    if not self._skip_polling:
                         self._skip_polling = True
                     sleep(1)
 
@@ -133,20 +128,7 @@ class Car:
 
             if hasattr(self._dongle, 'get_obd_voltage'):
                 data.update({
-                    'obdVoltage':       self._dongle.get_obd_voltage(),
-                })
-            elif hasattr(self._watchdog, 'get_voltage'):
-                data.update({
-                    'obdVoltage':       self._watchdog.get_voltage(),
-                })
-
-            if hasattr(self._watchdog, 'get_thresholds'):
-                thresholds = self._watchdog.get_thresholds()
-
-                data.update({
-                    'startupThreshold':         thresholds['startup'],
-                    'shutdownThreshold':        thresholds['shutdown'],
-                    'emergencyThreshold':       thresholds['emergency'],
+                    'obdVoltage': self._dongle.get_obd_voltage(),
                 })
 
             for call_back in self._data_callbacks:
@@ -162,7 +144,7 @@ class Car:
                     sleep(1)
 
     def register_data(self, callback):
-        """ Register a callback that get called with new data. """
+        """ Register a callback that gets called with new data. """
         if callback not in self._data_callbacks:
             self._data_callbacks.append(callback)
 

@@ -1,7 +1,7 @@
 """ Generic decoder for ISO-TP based cars """
 import logging
 import struct
-from dongle import NoData
+from elm327 import NoData
 
 FormatMap = {
     0: {'f': 'x'},

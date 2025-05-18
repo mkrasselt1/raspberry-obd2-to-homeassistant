@@ -1,7 +1,7 @@
 from mqtt_handler import MqttHandler
 from gpspoller import GpsPoller
-import car
-import dongle
+import ioniq_bev
+import elm327
 import time
 from config import load_config
 
@@ -32,23 +32,17 @@ def main():
     )
     mqtt_handler.start_loop()
 
-    # Load OBD2 interface module
-    DONGLE = dongle.load()
-
-    # Load car module
-    CAR = car.load("ioniq_bev")
-
     Threads = []
 
     # Init dongle
-    dongle_instance = DONGLE(config['obd'])
+    dongle_instance = elm327.Elm327(config['obd'])
 
     # Init GPS interface
     gps = GpsPoller()
     Threads.append(gps)
 
     # Init car
-    car_instance = CAR(config['car'], dongle_instance, gps)
+    car_instance = ioniq_bev.IoniqBev(config, dongle_instance, gps)
     Threads.append(car_instance)
 
     # Start polling loops
