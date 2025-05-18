@@ -9,6 +9,7 @@ class Elm327:
     """ Implementation for ELM327 """
 
     def __init__(self, config):
+        print("[DEBUG] Initializing ELM327 dongle...")
         self._serial_lock = Lock()
         self._serial = serial.Serial(config['port'],
                                      baudrate=config['baudrate'],
@@ -23,9 +24,11 @@ class Elm327:
                                b'ERR', b'FB ERROR', b'LP ALERT', b'LV RESET', b'STOPPED',
                                b'UNABLE TO CONNECT')
         self.init_dongle()
+        print("[DEBUG] ELM327 dongle initialized successfully.")
 
     def talk_to_dongle(self, cmd, expect=None):
         """ Send command to dongle and return the response as string. """
+        print(f"[DEBUG] Sending command to dongle: {cmd}")
         try:
             with self._serial_lock:
                 while self._serial.in_waiting:   # Clear the input buffer
@@ -50,36 +53,46 @@ class Elm327:
                 if expect:
                     expect = bytes(expect, 'ascii')
                     if expect not in ret:
-                        raise Exception("Expected %s, got %s" % (expect, ret))
+                        print(f"[ERROR] Expected '{expect}', but got '{ret}'")
+                        raise Exception(f"Expected {expect}, got {ret}")
 
         except serial.SerialTimeoutException:
+            print("[ERROR] Serial timeout occurred while communicating with dongle.")
             ret = b'TIMEOUT'
 
+        print(f"[DEBUG] Response from dongle: {ret.strip(b'\\r\\n')}")
         return ret.strip(b'\r\n')
 
     def send_at_cmd(self, cmd, expect='OK'):
         """ Send AT command to dongle and return response. """
+        print(f"[DEBUG] Sending AT command: {cmd}")
         ret = self.talk_to_dongle(cmd, expect)
+        print(f"[DEBUG] AT command response: {ret}")
         return ret.split(b"\r\n")[-1]
 
     def send_command(self, cmd):
         """ Convert bytearray "cmd" to string,
             send to dongle and parse the response. """
+        print(f"[DEBUG] Sending command: {cmd.hex()}")
         cmd = cmd.hex()
         ret = self.talk_to_dongle(cmd)
 
         if ret in self._ret_no_data:
+            print("[WARNING] No data received from dongle.")
             raise Exception("No Data")
 
         if ret in self._ret_can_error:
+            print("[ERROR] CAN error occurred.")
             raise Exception("CAN Error")
 
+        print(f"[DEBUG] Command response: {ret}")
         return ret
 
     def send_command_ex(self, cmd, cantx, canrx):
         """ Convert bytearray "cmd" to string,
             send to dongle and parse the response.
             Also handles filters and masks. """
+        print(f"[DEBUG] Sending extended command: {cmd.hex()}, CAN TX: {cantx}, CAN RX: {canrx}")
         cmd = cmd.hex()
         self.set_can_id(cantx)
         self.set_can_rx_filter(canrx)
@@ -88,15 +101,19 @@ class Elm327:
         ret = self.talk_to_dongle(cmd)
 
         if ret in self._ret_no_data:
+            print("[WARNING] No data received from dongle.")
             raise Exception("No Data")
 
         if ret in self._ret_can_error:
+            print("[ERROR] CAN error occurred.")
             raise Exception("CAN Error")
 
+        print(f"[DEBUG] Extended command response: {ret}")
         return ret
 
     def init_dongle(self):
         """ Send some initializing commands to the dongle. """
+        print("[DEBUG] Initializing dongle with AT commands...")
         cmds = (('ATZ', 'ELM327'),
                 ('ATE0', 'OK'),
                 ('ATL1', 'OK'),
@@ -106,10 +123,13 @@ class Elm327:
                 ('ATFE', 'OK'))
 
         for cmd, exp in cmds:
+            print(f"[DEBUG] Sending initialization command: {cmd}")
             self.send_at_cmd(cmd, exp)
+        print("[DEBUG] Dongle initialization complete.")
 
     def set_protocol(self, prot):
         """ Set the variant of CAN protocol """
+        print(f"[DEBUG] Setting protocol: {prot}")
         if prot == 'CAN_11_500':
             self.send_at_cmd('ATSP6', 'OK')
             self._is_extended = False
@@ -117,10 +137,12 @@ class Elm327:
             self.send_at_cmd('ATSP7', 'OK')
             self._is_extended = True
         else:
-            raise ValueError('Unsupported protocol %s' % prot)
+            print(f"[ERROR] Unsupported protocol: {prot}")
+            raise ValueError(f"Unsupported protocol {prot}")
 
     def set_can_id(self, can_id):
         """ Set CAN id to use for sent frames """
+        print(f"[DEBUG] Setting CAN ID: {can_id}")
         if isinstance(can_id, bytes):
             can_id = str(can_id)
         elif isinstance(can_id, int):
@@ -132,6 +154,7 @@ class Elm327:
 
     def set_can_rx_mask(self, mask):
         """ Set the CAN id mask for receiving frames """
+        print(f"[DEBUG] Setting CAN RX mask: {mask}")
         if isinstance(mask, bytes):
             mask = str(mask)
         elif isinstance(mask, int):
@@ -143,6 +166,7 @@ class Elm327:
 
     def set_can_rx_filter(self, can_id):
         """ Set the CAN id filter for receiving frames """
+        print(f"[DEBUG] Setting CAN RX filter: {can_id}")
         if isinstance(can_id, bytes):
             can_id = str(can_id)
         elif isinstance(can_id, int):
@@ -154,10 +178,14 @@ class Elm327:
 
     def get_obd_voltage(self):
         """ Get the voltage at the OBD port """
+        print("[DEBUG] Getting OBD voltage...")
         ret = self.send_at_cmd('ATRV', None)
-        return round(float(ret[:-1]), 2)
+        voltage = round(float(ret[:-1]), 2)
+        print(f"[DEBUG] OBD voltage: {voltage} V")
+        return voltage
 
     def calibrate_obd_voltage(self, real_voltage):
         """ Calibrate the voltage sensor using an
             externally measured voltage reading """
+        print(f"[DEBUG] Calibrating OBD voltage to: {real_voltage} V")
         self.send_at_cmd('ATCV%04.0f' % (real_voltage * 100))
