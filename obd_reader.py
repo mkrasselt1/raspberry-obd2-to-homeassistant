@@ -115,11 +115,10 @@ class ObdReader:
                         value = self.parse_formula(details["equation"], data_bytes)
                     else:
                         value = None
-                    # MQTT nur wenn debug nicht aktiv
-                    if not self.debug:
-                        topic = f"{mqtt_handler.topic_prefix}/{details['pid_id']}/state"
-                        mqtt_handler.publish(topic, value)
+                    if self.debug:
                         print(f"Published {details['name']}: {value} {details['unit']} to {topic}")
+                    topic = f"{mqtt_handler.topic_prefix}/{details['pid_id']}/state"
+                    mqtt_handler.publish(topic, value)
                 except Exception as e:
                     print(f"Failed to read PID {pid}: {e}")
 
