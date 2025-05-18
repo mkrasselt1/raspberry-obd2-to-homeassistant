@@ -23,9 +23,18 @@ class ObdReader:
             self.ser.close()
 
     def send_serial_cmd(self, cmd):
+        if self.debug:
+            print(f"[SERIAL SEND] {cmd}")
         self.ser.write((cmd + "\r").encode())
         time.sleep(0.2)
-        response = self.ser.read_all().decode(errors="ignore")
+        response_bytes = self.ser.read_all()
+        if self.debug:
+            print(f"[SERIAL RECV] {response_bytes.hex(' ')}")
+            try:
+                print(f"[SERIAL RECV DECODED] {response_bytes.decode(errors='ignore')}")
+            except Exception as e:
+                print(f"[SERIAL RECV DECODED] <decode error: {e}>")
+        response = response_bytes.decode(errors="ignore")
         return response
 
     def parse_formula(self, equation, data_bytes):
