@@ -1,7 +1,6 @@
 """ Generic decoder for ISO-TP based cars """
 import logging
 import struct
-from elm327 import NoData
 
 FormatMap = {
     0: {'f': 'x'},
@@ -138,9 +137,6 @@ class IsoTpDecoder:
 
                         data[name] = value * field['scale'] + field['offset']
 
-            except NoData:
-                if not cmd_data.get('optional', False):
-                    raise
             except struct.error as err:
                 self._log.error("err(%s) cmd(%s) fmt(%s):%d raw(%s):%d", err, cmd_data['cmd'].hex(),
                                 cmd_data['struct'].format, cmd_data['struct'].size,
