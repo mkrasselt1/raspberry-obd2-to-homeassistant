@@ -1,6 +1,7 @@
 """ Module for the Hyundai Ioniq Electric 28kWh """
 from car import Car
 from isotp_decoder import IsoTpDecoder
+from elm327 import NoData, CanError
 
 b2101 = bytes.fromhex('2101')
 b2102 = bytes.fromhex('2102')

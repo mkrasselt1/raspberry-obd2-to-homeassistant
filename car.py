@@ -1,6 +1,7 @@
 """ The car polling loop and associated infrastructure """
 from time import time, sleep
 from threading import Thread
+from elm327 import NoData, CanError
 
 def ifbu(in_bytes):
     """ int from bytes unsigned """
@@ -90,8 +91,21 @@ class Car:
             }
 
                 
-            self.read_dongle(data)  # readDongle updates data inplace
-            self.last_data = now
+            if not self._skip_polling or self._watchdog.is_car_available():
+                if self._skip_polling:
+                    self._log.info("Resume polling.")
+                    self._skip_polling = False
+                try:
+                    self.read_dongle(data)  # readDongle updates data inplace
+                    self.last_data = now
+                except CanError as err:
+                    self._log.warning(err)
+                except NoData:
+                    self._log.info("NO DATA")
+                    if not self._watchdog.is_car_available():
+                        self._log.info("Car off detected. Stop polling until car on.")
+                        self._skip_polling = True
+                    sleep(1)
 
             fix = self._gps.fix()
             if fix and fix['mode'] > 1:
