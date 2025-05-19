@@ -138,19 +138,19 @@ class Elm327:
                 frame_type = int(line[offset:offset+1], 16)
 
                 if frame_type == 0:     # Single frame
-                    self._log.debug("%s single frame", line)
+                    print(f"%s single frame", line)
                     data_len = int(line[offset+1:offset+2], 16)
                     data = bytes.fromhex(line[offset+2:data_len*2+offset+2])
                     break
 
                 elif frame_type == 1:   # First frame
-                    self._log.debug("%s first frame", line)
+                    print(f"%s first frame", line)
                     data_len = int(line[offset+1:offset+4], 16)
                     data = bytearray.fromhex(line[offset+4:])
                     last_idx = 0
 
                 elif frame_type == 2:   # Consecutive frame
-                    self._log.debug("%s consecutive frame", line)
+                    print(f"%s consecutive frame", line)
                     idx = int(line[offset+1:offset+2], 16)
                     if (last_idx + 1) % 0x10 != idx:
                         raise CanError("Bad frame order: last_idx(%d) idx(%d)" %
