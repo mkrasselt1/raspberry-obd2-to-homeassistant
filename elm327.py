@@ -31,11 +31,11 @@ class Elm327:
         print(f"[DEBUG] Sending command to dongle: {cmd}")
         try:
             with self._serial_lock:
-                #while self._serial.in_waiting:   # Clear the input buffer
-                #    self._serial.read(self._serial.in_waiting)
-                #    sleep(0.1)
-                self._serial.flushInput()  # Clear the input buffer
-                self._serial.flushOutput()  # Clear the output buffer
+                # Input-Buffer komplett leeren (Alternative zu flushInput)
+                while self._serial.in_waiting:
+                    self._serial.read(self._serial.in_waiting)
+                    sleep(0.05)
+                self._serial.flushOutput()  # Output-Buffer leeren
                 self._serial.timeout = 0.5  # Set timeout for reading
                 
                 # Stelle sicher, dass cmd ein Byte-Objekt ist
