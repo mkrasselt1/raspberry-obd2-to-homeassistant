@@ -34,8 +34,17 @@ class Elm327:
                 #while self._serial.in_waiting:   # Clear the input buffer
                 #    self._serial.read(self._serial.in_waiting)
                 #    sleep(0.1)
-
-                self._serial.write(cmd + '\n')  # Ensure encoding is specified
+                self._serial.flushInput()  # Clear the input buffer
+                self._serial.flushOutput()  # Clear the output buffer
+                self._serial.timeout = 0.5  # Set timeout for reading
+                
+                # Stelle sicher, dass cmd ein Byte-Objekt ist
+                if isinstance(cmd, str):
+                    cmd = (cmd + '\r').encode()  # String zu Bytes und Zeilenende anhängen
+                elif isinstance(cmd, bytes):
+                    if not cmd.endswith(b'\r'):
+                        cmd += b'\r'
+                self._serial.write(cmd)
                 ret = bytearray()
                 while expect is not None:
                     if not self._serial.in_waiting:
@@ -183,8 +192,8 @@ class Elm327:
         print(f"[DEBUG] OBD voltage: {voltage} V")
         return voltage
 
-    def calibrate_obd_voltage(self, real_voltage):
-        """ Calibrate the voltage sensor using an
-            externally measured voltage reading """
-        print(f"[DEBUG] Calibrating OBD voltage to: {real_voltage} V")
-        self.send_at_cmd('AT CV %04.0f' % (real_voltage * 100))
+    # def calibrate_obd_voltage(self, real_voltage):
+    #     """ Calibrate the voltage sensor using an
+    #         externally measured voltage reading """
+    #     print(f"[DEBUG] Calibrating OBD voltage to: {real_voltage} V")
+    #     self.send_at_cmd('AT CV %04.0f' % (real_voltage * 100))
