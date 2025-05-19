@@ -128,10 +128,10 @@ class Car:
                     'gps_device':   fix['device'],
                 })
 
-            if hasattr(self._dongle, 'get_obd_voltage'):
-                data.update({
-                    'obdVoltage': self._dongle.get_obd_voltage(),
-                })
+            # if hasattr(self._dongle, 'get_obd_voltage'):
+            #     data.update({
+            #         'obdVoltage': self._dongle.get_obd_voltage(),
+            #     })
 
             for call_back in self._data_callbacks:
                 call_back(data)
