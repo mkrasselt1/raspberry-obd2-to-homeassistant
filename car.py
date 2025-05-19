@@ -38,6 +38,7 @@ class Car:
         self._poll_interval = 1
         self._thread = None
         self._running = False
+        self._skip_polling = False
         self.last_data = 0
         self._data_callbacks = []
 
