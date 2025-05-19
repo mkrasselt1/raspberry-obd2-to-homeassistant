@@ -4,7 +4,13 @@ from time import sleep
 import math
 import serial
 
+class CanError(Exception):
+    """ CAN communication failed """
 
+
+class NoData(Exception):
+    """ CAN did not return any data in time """
+    
 class Elm327:
     """ Implementation for ELM327 """
 
@@ -108,14 +114,70 @@ class Elm327:
 
         if ret in self._ret_no_data:
             print("[WARNING] No data received from dongle.")
-            raise Exception("No Data")
+            raise NoData(ret)
 
         if ret in self._ret_can_error:
             print("[ERROR] CAN error occurred.")
-            raise Exception("CAN Error")
+            raise CanError("Failed Command %s\n%s" % (cmd, ret))
 
         print(f"[DEBUG] Extended command response: {ret}")
-        return ret
+
+        try:
+            data = None
+            data_len = 0
+            last_idx = 0
+            raw = str(ret, 'ascii').split('\r\n')
+
+            for line in raw:
+                if ((self._is_extended is False and len(line) != 19)
+                        or (self._is_extended is True and len(line) != 27)):
+                    raise ValueError
+
+                offset = 8 if self._is_extended else 3
+
+                frame_type = int(line[offset:offset+1], 16)
+
+                if frame_type == 0:     # Single frame
+                    self._log.debug("%s single frame", line)
+                    data_len = int(line[offset+1:offset+2], 16)
+                    data = bytes.fromhex(line[offset+2:data_len*2+offset+2])
+                    break
+
+                elif frame_type == 1:   # First frame
+                    self._log.debug("%s first frame", line)
+                    data_len = int(line[offset+1:offset+4], 16)
+                    data = bytearray.fromhex(line[offset+4:])
+                    last_idx = 0
+
+                elif frame_type == 2:   # Consecutive frame
+                    self._log.debug("%s consecutive frame", line)
+                    idx = int(line[offset+1:offset+2], 16)
+                    if (last_idx + 1) % 0x10 != idx:
+                        raise CanError("Bad frame order: last_idx(%d) idx(%d)" %
+                                       (last_idx, idx))
+
+                    frame_len = min(7, data_len - len(data))
+                    data.extend(bytearray.fromhex(
+                        line[offset+2:frame_len*2+offset+2]))
+                    last_idx = idx
+
+                    if data_len == len(data):
+                        break
+
+                else:                   # Unexpected frame
+                    raise ValueError
+
+            if not data or data_len == 0:
+                raise NoData('NO DATA')
+
+            if data_len != len(data):
+                raise CanError("Data length mismatch %s: %d vs %d %s" %
+                               (cmd, data_len, len(data), data.hex()))
+
+        except ValueError:
+            raise CanError("Failed Command %s\n%s" % (cmd, ret))
+
+        return data
 
     def init_dongle(self):
         """ Send some initializing commands to the dongle. """
